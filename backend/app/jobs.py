@@ -9,11 +9,22 @@ READINGS_PROMPT = (
 )
 
 
-async def run_daily_issue(day: str, store: Store, complete: Completer) -> bool:
-    """6:00 job. Returns True if a new issue was built, False if one already exists."""
+async def run_daily_issue(day: str, store: Store, complete: Completer, fetch_readings=None) -> bool:
+    """6:00 job. Returns True if a new issue was built, False if one already exists.
+
+    `fetch_readings(day) -> text` is tried first (the USCCB feed); if it fails or is absent,
+    Claude is asked to find the readings with web search.
+    """
     if await store.get_issue(day) is not None:
         return False
-    readings = await complete(READINGS_PROMPT.format(day=day))
+    readings = None
+    if fetch_readings is not None:
+        try:
+            readings = await fetch_readings(day)
+        except Exception:
+            readings = None
+    if not readings:
+        readings = await complete(READINGS_PROMPT.format(day=day))
     issue = await build_issue(day, readings, complete)
     await store.save_issue(issue)
     return True

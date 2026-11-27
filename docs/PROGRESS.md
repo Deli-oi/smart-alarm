@@ -1,7 +1,7 @@
 # Progress
 
 ## Done and tested
-- Backend (27 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
+- Backend (33 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
   FSRS cards), tasks, Jarvis briefing text, opt-in Fish Audio speech (voice set by `FISH_VOICE_ID`),
   10:30pm check with evidence matching, GitHub adapter.
 - `/day`: today's calendar (Google private iCal link, no OAuth, overlaps flagged) and inbox subjects
@@ -12,13 +12,23 @@
   backend: seeded issue, failed first attempt, passed second attempt, Today with calendar overlaps, evening tasks.
 - Swift core package (tests pass on Mac CI), including the `/day` models, and the app (compiles on Mac CI).
 
+## Research results (2026-11-27)
+- Web search tool: `web_search_20250305` is a current, documented tool type (newer versions add dynamic filtering). Keep it.
+- AlarmKit entitlement: Apple forum guidance says no special entitlement or portal capability exists; only
+  `NSAlarmKitUsageDescription` in Info.plist. A developer also ran an AlarmKit prototype on a free Personal Team.
+  So a paid account is probably not needed for the alarm itself. Not confirmed by Apple docs; still test on the phone.
+- AlarmKit risks found: overlapping alerting alarms can silence each other (so the safety alarm moved from 7:05 to 7:10),
+  late delivery on a locked device, and iOS 27 beta regressions. Alarms break through all Focus modes.
+- Readings: USCCB publishes `https://bible.usccb.org/readings.rss` with the full text; implemented in `sources/usccb.py`
+  with Claude web search as the fallback. Today's real readings are Revelation 20 and Luke 21, so the earlier placeholder was wrong.
+- Connector privacy research: see `docs/CONNECTORS.md`.
+
 ## Not yet verified
 - Anything against live Claude, Fish Audio or Atlas (no keys in the build environment).
-- The Fish voice by ear. Candidates: Alok (default) and F1; sample links in `docs/VOICE.md`.
-- The `web_search_20250305` tool name in `backend/app/llm.py`: check against current Anthropic docs.
-- Fetching the Catholic readings: the job asks Claude to retrieve them from USCCB; reliability unknown.
-- AlarmKit on a device: ring length, the Read button opening the app, the 7:05 safety alarm.
-- Whether the AlarmKit entitlement needs a paid Apple Developer account.
+- The Fish voice by ear. Candidates: F1 (default) and Alok; sample links in `docs/VOICE.md`.
+- The USCCB feed parser against the live feed from the real host (tested on a reconstructed fixture; the build sandbox cannot reach USCCB).
+- AlarmKit on a device: ring length, the Read button opening the app, the 7:10 safety alarm and overlap behavior.
+- Whether a free Apple ID can install and run AlarmKit (forum evidence says yes; unconfirmed).
 - The IMAP and iCal adapters against real accounts (tested with fixtures only).
 
 ## Next

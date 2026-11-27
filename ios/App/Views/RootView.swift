@@ -45,7 +45,7 @@ struct HomeView: View {
                             guard await AlarmScheduler.authorize() else { alarmStatus = "Alarm permission denied."; return }
                             do {
                                 try await AlarmScheduler.scheduleMorning(hour: 7, minute: 0)
-                                alarmStatus = "Set for 7:00, with a safety alarm at 7:05."
+                                alarmStatus = "Set for 7:00, with a safety alarm at 7:10."
                             } catch { alarmStatus = "Couldn't schedule: \(error.localizedDescription)" }
                         }
                     }

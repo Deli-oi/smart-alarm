@@ -16,7 +16,14 @@ async def build_daily_issue() -> None:
     """6:00 job: readings, three articles, critical-issue check, recall questions."""
     from .main import today  # local import avoids a cycle
 
-    await run_daily_issue(today(), MongoStore(get_db()), claude_complete)
+    from datetime import date
+
+    from .sources.usccb import fetch_readings_text
+
+    async def feed(day: str) -> str:
+        return await fetch_readings_text(date.fromisoformat(day))
+
+    await run_daily_issue(today(), MongoStore(get_db()), claude_complete, fetch_readings=feed)
 
 
 async def build_evening_check() -> None:

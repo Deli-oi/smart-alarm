@@ -51,7 +51,7 @@ enum AlarmScheduler {
     }
 
     /// Schedules the main alarm plus a safety alarm a few minutes later, in case the first is slept through.
-    static func scheduleMorning(hour: Int, minute: Int, safetyMinutesLater: Int = 5) async throws {
+    static func scheduleMorning(hour: Int, minute: Int, safetyMinutesLater: Int = 10) async throws {
         try await cancelAll()
         let mainID = UUID()
         try await schedule(id: mainID, hour: hour, minute: minute, title: "Wake up", showRead: true)
