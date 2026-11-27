@@ -1,7 +1,7 @@
 # Progress
 
 ## Done and tested
-- Backend (26 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
+- Backend (27 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
   FSRS cards), tasks, Jarvis briefing text, opt-in Fish Audio speech (voice set by `FISH_VOICE_ID`),
   10:30pm check with evidence matching, GitHub adapter.
 - `/day`: today's calendar (Google private iCal link, no OAuth, overlaps flagged) and inbox subjects
@@ -22,7 +22,7 @@
 - The IMAP and iCal adapters against real accounts (tested with fixtures only).
 
 ## Next
-- Drive, Outlook, Claude chats, Claude Code and Apple Notes adapters for the evening check.
+- Drive, Outlook (Gmail sent mail already counts as evidence once the IMAP login is set), Claude chats, Claude Code and Apple Notes adapters for the evening check.
 - Calendar loop with approval before any change.
 - Jarvis conversation (speech in, Claude tool-use loop, speech out).
 - Push notifications (needs the paid developer account).

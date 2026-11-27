@@ -34,6 +34,10 @@ async def build_evening_check() -> None:
     adapters = []
     if s.github_user and s.github_token:
         adapters.append(GitHubAdapter(s.github_user, s.github_token))
+    if s.gmail_user and s.gmail_app_password:
+        from .sources.gmail_imap import GmailSentAdapter
+
+        adapters.append(GmailSentAdapter(s.gmail_user, s.gmail_app_password))
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
     await run_evening_check(today(), since, MongoStore(get_db()), adapters)
 
