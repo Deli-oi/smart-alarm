@@ -1,0 +1,12 @@
+.env
+*.env
+!.env.example
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.DS_Store
