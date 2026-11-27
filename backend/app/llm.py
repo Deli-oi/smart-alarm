@@ -29,4 +29,4 @@ def fish_speech(text: str) -> Iterator[bytes]:
 
     s = get_settings()
     client = FishAudio(api_key=s.fish_api_key)
-    yield from client.tts.stream(text=text)
+    yield from client.tts.stream(text=text, reference_id=s.fish_voice_id, model="s2.1-pro", latency="balanced")

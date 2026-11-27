@@ -19,3 +19,9 @@ Any host that runs a Docker container works the same way (Fly.io, a small VPS).
 - The app refuses to start with the default token unless `DEBUG=true`.
 - `GET /issue/today` returns 404 until the 6:00 job has run; the app then shows its cached copy.
 - The 10:30pm result is read from `GET /evening/summary` until push notifications exist.
+
+## Connecting your calendar and inbox
+- `ICS_URL`: Google Calendar, Settings, your calendar, "Secret address in iCal format". Treat it like a password.
+- `GMAIL_USER` and `GMAIL_APP_PASSWORD`: turn on 2-step verification, then create an app password. Read-only.
+- `FISH_VOICE_ID`: optional, defaults to the voice in `docs/VOICE.md`.
+- Open the web preview, Settings, and enter the server URL and `API_TOKEN` to see it live.

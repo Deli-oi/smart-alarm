@@ -53,6 +53,17 @@ import Testing
         #expect(issue.fullText.contains("Gospel"))
     }
 
+    @Test func decodesDayPlan() throws {
+        let json = """
+        {"date":"2026-11-27","events":[{"start":"12:00","end":"13:30","title":"Work","location":"",
+          "all_day":false,"overlaps":true}],
+         "mail":[{"sender":"A","subject":"Hi"}],"errors":["mail: GMAIL_USER / GMAIL_APP_PASSWORD not set"]}
+        """.data(using: .utf8)!
+        let day = try JSONDecoder().decode(DayPlan.self, from: json)
+        #expect(day.events.first?.overlaps == true)
+        #expect(day.errors.count == 1)
+    }
+
     @Test func requestCarriesBearerToken() {
         let c = APIClient(baseURL: URL(string: "https://example.com")!, token: "abc")
         #expect(c.request("issue/today").value(forHTTPHeaderField: "Authorization") == "Bearer abc")

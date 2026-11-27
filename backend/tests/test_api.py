@@ -81,3 +81,14 @@ def test_task_update_and_briefing(client):
 def test_unknown_task_404(client):
     r = client.post("/tasks/nope", json={"status": "done"}, headers=HEADERS)
     assert r.status_code == 404
+
+
+def test_day_reports_missing_config(monkeypatch):
+    from app.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "ics_url", "")
+    monkeypatch.setattr(s, "gmail_user", "")
+    r = TestClient(main.app).get("/day", headers=HEADERS)
+    assert r.status_code == 200
+    assert any("ICS_URL" in e for e in r.json()["errors"])

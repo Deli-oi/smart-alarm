@@ -59,6 +59,10 @@ public struct APIClient: Sendable {
         try await send(request("tasks/today"), as: [TaskItem].self)
     }
 
+    public func dayPlan() async throws -> DayPlan {
+        try await send(request("day"), as: DayPlan.self)
+    }
+
     public func briefingText() async throws -> String {
         struct B: Decodable { let text: String }
         return try await send(request("jarvis/briefing"), as: B.self).text

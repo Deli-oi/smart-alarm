@@ -3,6 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from . import recall
@@ -12,7 +13,7 @@ from .db import close_client, ensure_indexes, get_db
 from .llm import fish_speech
 from .models import GateResponse, Issue, PublicQuestion, SubmitAnswers, Task, TaskUpdate
 from .schedule import make_scheduler
-from .store import MongoStore, Store
+from .store import InMemoryStore, MongoStore, Store
 
 
 def require_token(authorization: str = Header(default="")) -> None:
@@ -20,7 +21,12 @@ def require_token(authorization: str = Header(default="")) -> None:
         raise HTTPException(status_code=401, detail="bad token")
 
 
+_memory = InMemoryStore()
+
+
 def get_store() -> Store:
+    if get_settings().store == "memory":
+        return _memory
     return MongoStore(get_db())
 
 
@@ -33,6 +39,9 @@ async def lifespan(app: FastAPI):
     cfg = get_settings()
     if cfg.api_token == "change-me" and not cfg.debug:
         raise RuntimeError("Set API_TOKEN to a real secret (or DEBUG=true for local dev).")
+    if cfg.store == "memory":  # local dev: no Atlas, no scheduler
+        yield
+        return
     await ensure_indexes(get_db())
     scheduler = make_scheduler()
     scheduler.start()
@@ -44,6 +53,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Smart Alarm", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in get_settings().cors_origins.split(",")],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 auth = [Depends(require_token)]
 
 
@@ -127,3 +142,46 @@ async def jarvis_speak(store: Store = Depends(get_store)) -> StreamingResponse:
 async def evening_summary(store: Store = Depends(get_store)) -> dict:
     """What the 10:30pm check found, until push notifications are set up."""
     return {"text": await store.get_summary(today())}
+
+
+@app.get("/day", dependencies=auth)
+async def day_plan() -> dict:
+    """Calendar events (with overlaps flagged) and the latest inbox subjects."""
+    from datetime import date as _date
+
+    from .sources.calendar_ics import fetch_day
+    from .sources.gmail_imap import recent_mail
+
+    cfg = get_settings()
+    out: dict = {"date": today(), "events": [], "mail": [], "errors": []}
+    if cfg.ics_url:
+        try:
+            events = await fetch_day(cfg.ics_url, _date.fromisoformat(today()), cfg.timezone)
+            out["events"] = [e.model_dump() for e in events]
+        except Exception as e:  # a dead link should not hide the rest of the day
+            out["errors"].append(f"calendar: {type(e).__name__}")
+    else:
+        out["errors"].append("calendar: ICS_URL not set")
+    if cfg.gmail_user and cfg.gmail_app_password:
+        try:
+            out["mail"] = [m.model_dump() for m in await recent_mail(cfg.gmail_user, cfg.gmail_app_password)]
+        except Exception as e:
+            out["errors"].append(f"mail: {type(e).__name__}")
+    else:
+        out["errors"].append("mail: GMAIL_USER / GMAIL_APP_PASSWORD not set")
+    return out
+
+
+@app.post("/dev/seed", dependencies=auth)
+async def dev_seed(store: Store = Depends(get_store)) -> dict:
+    """Local dev only (STORE=memory and DEBUG=true): fill today with a demo issue and tasks."""
+    cfg = get_settings()
+    if not (cfg.debug and cfg.store == "memory"):
+        raise HTTPException(status_code=404, detail="not found")
+    from .seed import demo_issue, demo_tasks
+
+    day = today()
+    await store.save_issue(demo_issue(day))
+    for t in demo_tasks(day):
+        await store.put_task(t)
+    return {"seeded": day}

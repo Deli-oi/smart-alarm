@@ -15,7 +15,7 @@ shared={
  {"q":"Where was the Antikythera mechanism found?","o":["A Greek shipwreck","An Egyptian tomb","A Roman villa","A Turkish library"],"a":0},
  {"q":"What did it predict?","o":["Harvests","Eclipses","Wars","Tides only"],"a":1},
  {"q":"When was it found?","o":["1801","1901","1951","2001"],"a":1}]}
-sample=dict(shared,date="Friday, 27 November",name="Eli",mode="Sample content",badge="Preview",
+sample=dict(shared,audio="https://platform.r2.fish.audio/tasks/2026-11-27/4d9e227f12994711bae6d8595380f22f.mp3",date="Friday, 27 November",name="Eli",mode="Sample content",badge="Preview",
  events=[{"start":"08:00","end":"09:30","title":"Morning block","note":"Deep work"},
  {"start":"10:00","end":"11:50","title":"Lecture","note":""},
  {"start":"12:00","end":"13:30","title":"Lunch with a friend","note":""},

@@ -70,3 +70,32 @@ public struct TaskItem: Codable, Sendable, Equatable, Identifiable {
         case pushTo = "push_to"
     }
 }
+
+public struct DayEvent: Codable, Sendable, Equatable, Identifiable {
+    public var id: String { start + title }
+    public let start: String  // "HH:MM" local, empty for all-day
+    public let end: String
+    public let title: String
+    public let location: String
+    public let allDay: Bool
+    public let overlaps: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case start, end, title, location, overlaps
+        case allDay = "all_day"
+    }
+}
+
+public struct MailItem: Codable, Sendable, Equatable, Identifiable {
+    public var id: String { sender + subject }
+    public let sender: String
+    public let subject: String
+}
+
+/// The /day endpoint: calendar plus inbox. `errors` says which source is not set up yet.
+public struct DayPlan: Codable, Sendable, Equatable {
+    public let date: String
+    public let events: [DayEvent]
+    public let mail: [MailItem]
+    public let errors: [String]
+}
