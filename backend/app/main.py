@@ -30,6 +30,9 @@ def today() -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    cfg = get_settings()
+    if cfg.api_token == "change-me" and not cfg.debug:
+        raise RuntimeError("Set API_TOKEN to a real secret (or DEBUG=true for local dev).")
     await ensure_indexes(get_db())
     scheduler = make_scheduler()
     scheduler.start()
@@ -118,3 +121,9 @@ async def jarvis_speak(store: Store = Depends(get_store)) -> StreamingResponse:
     day = today()
     text = build_briefing(day, await store.list_tasks(day), await store.get_issue(day))
     return StreamingResponse(fish_speech(text), media_type="audio/mpeg")
+
+
+@app.get("/evening/summary", dependencies=auth)
+async def evening_summary(store: Store = Depends(get_store)) -> dict:
+    """What the 10:30pm check found, until push notifications are set up."""
+    return {"text": await store.get_summary(today())}

@@ -10,6 +10,7 @@ COLLECTIONS = (
     "tasks",
     "source_records",
     "devices",
+    "summaries",
 )
 
 _client: AsyncMongoClient | None = None
@@ -34,6 +35,7 @@ async def ensure_indexes(db: AsyncDatabase) -> None:
     await db.tasks.create_index([("date", 1), ("status", 1)])
     await db.source_records.create_index([("source", 1), ("external_id", 1)], unique=True)
     await db.devices.create_index("token", unique=True)
+    await db.summaries.create_index("date", unique=True)
 
 
 async def close_client() -> None:

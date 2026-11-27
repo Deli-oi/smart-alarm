@@ -7,7 +7,7 @@ from pymongo import MongoClient
 
 from .config import get_settings
 from .db import get_db
-from .jobs import run_daily_issue
+from .jobs import run_daily_issue, run_evening_check
 from .llm import claude_complete
 from .store import MongoStore
 
@@ -20,8 +20,22 @@ async def build_daily_issue() -> None:
 
 
 async def build_evening_check() -> None:
-    """10:30pm job: gather leftover tasks and push a notification."""
-    # Phase 4 (needs sources connected and a paid Apple developer account for push)
+    """10:30pm job: gather evidence from sources and save the leftover summary.
+
+    Push delivery comes later (needs a paid Apple developer account); until then the app
+    shows the summary from /evening/summary.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from .main import today
+    from .sources.github import GitHubAdapter
+
+    s = get_settings()
+    adapters = []
+    if s.github_user and s.github_token:
+        adapters.append(GitHubAdapter(s.github_user, s.github_token))
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    await run_evening_check(today(), since, MongoStore(get_db()), adapters)
 
 
 def make_scheduler() -> AsyncIOScheduler:

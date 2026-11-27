@@ -14,7 +14,10 @@ class Settings(BaseSettings):
     claude_model: str = "claude-sonnet-5-5"
     fish_api_key: str = ""
     api_token: str = "change-me"  # shared secret the iPhone app sends
+    github_user: str = ""
+    github_token: str = ""
     timezone: str = "America/New_York"
+    debug: bool = False
 
 
 @lru_cache

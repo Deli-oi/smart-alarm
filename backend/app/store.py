@@ -20,6 +20,8 @@ class Store(Protocol):
     async def list_tasks(self, day: str) -> list[Task]: ...
     async def put_task(self, task: Task) -> None: ...
     async def get_task(self, task_id: str) -> Task | None: ...
+    async def save_summary(self, day: str, text: str) -> None: ...
+    async def get_summary(self, day: str) -> str | None: ...
 
 
 class MongoStore:
@@ -58,6 +60,13 @@ class MongoStore:
         doc = await self.db.tasks.find_one({"id": task_id}, {"_id": 0})
         return Task(**doc) if doc else None
 
+    async def save_summary(self, day: str, text: str) -> None:
+        await self.db.summaries.replace_one({"date": day}, {"date": day, "text": text}, upsert=True)
+
+    async def get_summary(self, day: str) -> str | None:
+        doc = await self.db.summaries.find_one({"date": day})
+        return doc["text"] if doc else None
+
 
 class InMemoryStore:
     def __init__(self):
@@ -65,6 +74,7 @@ class InMemoryStore:
         self.attempts: list[dict] = []
         self.cards: dict[str, dict] = {}
         self.tasks: dict[str, Task] = {}
+        self.summaries: dict[str, str] = {}
 
     async def save_issue(self, issue: Issue) -> None:
         self.issues[issue.date] = issue
@@ -93,3 +103,9 @@ class InMemoryStore:
 
     async def get_task(self, task_id: str) -> Task | None:
         return self.tasks.get(task_id)
+
+    async def save_summary(self, day: str, text: str) -> None:
+        self.summaries[day] = text
+
+    async def get_summary(self, day: str) -> str | None:
+        return self.summaries.get(day)

@@ -17,3 +17,22 @@ async def run_daily_issue(day: str, store: Store, complete: Completer) -> bool:
     issue = await build_issue(day, readings, complete)
     await store.save_issue(issue)
     return True
+
+
+async def run_evening_check(day: str, since_iso: str, store: Store, adapters: list) -> str:
+    """10:30pm job: pull evidence, auto-mark done tasks, save the summary the app shows."""
+    from .evening import leftover_tasks, notification_text
+
+    records = []
+    for a in adapters:
+        try:
+            records += await a.fetch_since(since_iso)
+        except Exception:  # one broken source must not sink the whole check
+            continue
+    tasks = await store.list_tasks(day)
+    leftover, auto_done = leftover_tasks(tasks, records)
+    for t in auto_done:
+        await store.put_task(t)
+    text = notification_text(leftover, auto_done)
+    await store.save_summary(day, text)
+    return text
