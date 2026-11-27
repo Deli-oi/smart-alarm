@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Alarm: preview</title>
+<style>
+  :root { --bg:#faf8f4; --ink:#1d1d1f; --mute:#6b6b70; --line:#e3dfd6; --accent:#2b5fd9; --ok:#1f8a4c; --bad:#b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141416; --ink:#f2f2f4; --mute:#9a9aa2; --line:#2a2a2e; --accent:#7aa2ff; --ok:#4cc38a; --bad:#ff7b72; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, sans-serif; }
+  .banner { background:var(--accent); color:#fff; padding:8px 16px; font-size:13px; text-align:center; }
+  .phone { max-width:430px; margin:16px auto; min-height:760px; border:1px solid var(--line); border-radius:28px; overflow:hidden; position:relative; background:var(--bg); display:flex; flex-direction:column; }
+  header { padding:16px 20px; border-bottom:1px solid var(--line); font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+  main { flex:1; padding:20px; overflow:auto; }
+  button { font:inherit; border:1px solid var(--line); background:transparent; color:var(--ink); padding:12px 16px; border-radius:12px; cursor:pointer; width:100%; margin:6px 0; text-align:left; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); text-align:center; }
+  button:disabled { opacity:.4; cursor:default; }
+  .card { border:1px solid var(--line); border-radius:14px; padding:14px; margin:10px 0; }
+  .mute { color:var(--mute); font-size:14px; }
+  #reader { height:560px; overflow:hidden; position:relative; font:21px/1.65 Georgia, serif; }
+  #reader .inner { padding:0 4px 300px; will-change:transform; }
+  #timer { position:absolute; top:8px; right:12px; background:var(--bg); border:1px solid var(--line); border-radius:99px; padding:4px 12px; font:14px ui-monospace, monospace; z-index:2; }
+  .choice.sel { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  nav.tabs { display:flex; border-top:1px solid var(--line); }
+  nav.tabs button { border:0; border-radius:0; margin:0; text-align:center; font-size:13px; padding:14px 4px; }
+  nav.tabs button.on { color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="banner">Preview with sample content. The real app runs on iPhone; this page only shows the flow.</div>
+<div class="phone">
+  <header><span id="title">Smart Alarm</span><span class="mute" id="clock"></span></header>
+  <main id="main"></main>
+  <nav class="tabs">
+    <button data-go="home">Home</button><button data-go="reading">Read</button>
+    <button data-go="quiz">Recall</button><button data-go="notes">Day</button>
+  </nav>
+</div>
+<script>
+const ISSUE = {
+  title: "Sample issue",
+  sections: [
+    ["Readings (sample)", "Placeholder for the day's Mass readings. In the real app these come from the daily Catholic readings, then a short reflection ties the Gospel to your day."],
+    ["Missed news (sample)", "This slot covers something you missed yesterday that bears on your goals: supply chain, markets, law or health. Each article runs about seven hundred words and cites its source, so you can open the original."],
+    ["Research (sample)", "This slot covers a recent study in one of your fields, in plain language, with what it means for training, nutrition, cognition or your work."],
+    ["Wildcard (sample)", "This slot is whatever else the day's goals call for: a skill, a mental model, a legal or money lesson. The full issue is sized to read in about fifteen minutes."]
+  ]
+};
+const QUIZ = [
+  {q:"What does the research slot cover?", c:["A recent study in one of your fields","Sports scores","Weather","Recipes"], a:0},
+  {q:"How long is a full issue meant to take?", c:["5 minutes","15 minutes","45 minutes","2 hours"], a:1},
+  {q:"What does the missed-news slot cover?", c:["Anything at all","Something you missed that bears on your goals","Only finance","Only local news"], a:1},
+  {q:"What score unlocks the day?", c:["50%","60%","70%","100%"], a:2},
+  {q:"How many tries do you get?", c:["1","2","5","Unlimited"], a:1}
+];
+const TASKS = [
+  {t:"Review recall gate tests", s:"done", src:"github"},
+  {t:"Send weekly report", s:"open"},
+  {t:"Gym: squats and bench", s:"open"},
+  {t:"Call the dentist", s:"pushed"}
+];
+let st = {view:"home", paused:false, secs:900, offset:0, answers:{}, tries:0, result:null, timer:null, raf:null, last:0};
+const $ = s => document.querySelector(s), main = $("#main");
+const mmss = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+setInterval(()=>$("#clock").textContent = new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}), 1000);
+
+function stop(){ cancelAnimationFrame(st.raf); clearInterval(st.timer); st.raf = st.timer = null; }
+function go(v){ stop(); st.view = v; document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on", b.dataset.go===v)); render(); }
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
+
+function render(){
+  const v = st.view; $("#title").textContent = {home:"Smart Alarm",reading:"Today's issue",quiz:"Recall",notes:"Your day"}[v];
+  if(v==="home") main.innerHTML = `
+    <div class="card"><b>7:00 alarm</b><div class="mute">Rings through silent mode. A Read button opens the issue. A safety alarm follows at 7:05.</div></div>
+    <button class="primary" onclick="go('reading')">Read today's issue</button>
+    <p class="mute">Flow: alarm, 15-minute read, recall questions, your day, optional Jarvis rundown.</p>`;
+  if(v==="reading") readerView();
+  if(v==="quiz") quizView();
+  if(v==="notes") notesView();
+}
+
+function readerView(){
+  main.innerHTML = `<div id="reader"><div id="timer">${mmss(st.secs)}</div><div class="inner" id="inner">
+    ${ISSUE.sections.map(([h,b])=>`<h3>${h}</h3><p>${b}</p>`).join("")}</div></div>
+    <button onclick="st.paused=!st.paused;this.textContent=st.paused?'Resume':'Pause'">Pause</button>
+    <button class="primary" onclick="go('quiz')">Done reading: start recall</button>
+    <p class="mute">Demo runs about 40 times faster than the real 15 minutes.</p>`;
+  const inner = $("#inner"), view = $("#reader");
+  st.last = performance.now(); st.offset = 0;
+  const dur = 22000; // demo duration in ms for the whole scroll
+  const step = t => {
+    const dt = t - st.last; st.last = t;
+    if(!st.paused){ const travel = inner.scrollHeight - view.clientHeight; st.offset = Math.min(st.offset + travel*dt/dur, travel); inner.style.transform = `translateY(${-st.offset}px)`; }
+    st.raf = requestAnimationFrame(step);
+  };
+  st.raf = requestAnimationFrame(step);
+  st.timer = setInterval(()=>{ if(!st.paused && st.secs>0){ st.secs -= 40; if(st.secs<0) st.secs=0; $("#timer").textContent = mmss(st.secs);} }, 1000);
+}
+
+function quizView(){
+  if(st.result==="unlocked"){ main.innerHTML = `<div class="card ok"><b>Unlocked.</b></div><button class="primary" onclick="go('notes')">See your day</button>`; return; }
+  if(st.result==="locked"){ main.innerHTML = `<div class="card bad"><b>Out of tries.</b> In the app, an emergency skip is logged here.</div>`; return; }
+  main.innerHTML = QUIZ.map((x,i)=>`<div class="card"><b>${i+1}. ${x.q}</b>${x.c.map((c,j)=>`<button class="choice ${st.answers[i]===j?'sel':''}" onclick="st.answers[${i}]=${j};quizView()">${c}</button>`).join("")}</div>`).join("")
+    + `<button class="primary" ${Object.keys(st.answers).length<QUIZ.length?"disabled":""} onclick="submitQuiz()">Submit (try ${st.tries+1} of 2)</button>`
+    + (st.msg?`<p class="bad">${st.msg}</p>`:"");
+}
+function submitQuiz(){
+  st.tries++; const right = QUIZ.filter((x,i)=>st.answers[i]===x.a).length, pct = Math.round(100*right/QUIZ.length);
+  if(pct>=70){ st.result="unlocked"; st.msg=""; }
+  else if(st.tries>=2){ st.result="locked"; }
+  else { st.msg = `${pct}%. Need 70%. One more try.`; st.answers = {}; }
+  quizView();
+}
+
+function notesView(){
+  main.innerHTML = `<div class="card"><b>Today</b>${TASKS.map(t=>`<div style="padding:6px 0">${t.s==="done"?"✓":t.s==="pushed"?"→":"○"} ${t.t} <span class="mute">${t.s==="done"&&t.src?"detected via "+t.src:t.s==="pushed"?"pushed":""}</span></div>`).join("")}</div>
+    <button onclick="speak()">Play my rundown (Jarvis, opt-in)</button>
+    <p class="mute">Nothing speaks unless you tap. This demo uses your browser's voice; the app uses Fish Audio.</p>
+    <div class="card"><b>10:30pm check</b><div class="mute">1 left: Send weekly report, Gym. 1 detected done.</div></div>`;
+}
+function speak(){
+  const open = TASKS.filter(t=>t.s==="open").map(t=>t.t).join(", ");
+  speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(`Good morning. You have ${TASKS.filter(t=>t.s==="open").length} things on your list: ${open}.`));
+}
+go("home");
+</script>
+</body>
+</html>
