@@ -1,0 +1,24 @@
+name: SmartAlarm
+options:
+  bundleIdPrefix: com.deli-oi
+  deploymentTarget:
+    iOS: "26.0"
+packages:
+  SmartAlarmCore:
+    path: Core
+targets:
+  SmartAlarm:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: SmartAlarmCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.deli-oi.smartalarm
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSAlarmKitUsageDescription: "Rings your morning alarm and opens your daily issue."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Used only when you talk to Jarvis."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Used only when you talk to Jarvis."

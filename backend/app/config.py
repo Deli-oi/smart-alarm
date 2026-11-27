@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_db: str = "smart_alarm"
     anthropic_api_key: str = ""
+    claude_model: str = "claude-sonnet-5-5"
     fish_api_key: str = ""
     api_token: str = "change-me"  # shared secret the iPhone app sends
     timezone: str = "America/New_York"

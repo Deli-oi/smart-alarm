@@ -1,0 +1,31 @@
+name: ios
+on:
+  push:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+jobs:
+  core-tests:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test SmartAlarmCore
+        working-directory: ios/Core
+        run: swift test
+
+  app-build:
+    runs-on: macos-26
+    needs: core-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Build for simulator (no signing)
+        working-directory: ios
+        run: |
+          xcodebuild -project SmartAlarm.xcodeproj -scheme SmartAlarm \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build
