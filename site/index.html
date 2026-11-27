@@ -1,130 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Alarm: preview</title>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wake-Up</title>
 <style>
-  :root { --bg:#faf8f4; --ink:#1d1d1f; --mute:#6b6b70; --line:#e3dfd6; --accent:#2b5fd9; --ok:#1f8a4c; --bad:#b3261e; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#141416; --ink:#f2f2f4; --mute:#9a9aa2; --line:#2a2a2e; --accent:#7aa2ff; --ok:#4cc38a; --bad:#ff7b72; } }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, sans-serif; }
-  .banner { background:var(--accent); color:#fff; padding:8px 16px; font-size:13px; text-align:center; }
-  .phone { max-width:430px; margin:16px auto; min-height:760px; border:1px solid var(--line); border-radius:28px; overflow:hidden; position:relative; background:var(--bg); display:flex; flex-direction:column; }
-  header { padding:16px 20px; border-bottom:1px solid var(--line); font-weight:600; display:flex; justify-content:space-between; align-items:center; }
-  main { flex:1; padding:20px; overflow:auto; }
-  button { font:inherit; border:1px solid var(--line); background:transparent; color:var(--ink); padding:12px 16px; border-radius:12px; cursor:pointer; width:100%; margin:6px 0; text-align:left; }
-  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); text-align:center; }
-  button:disabled { opacity:.4; cursor:default; }
-  .card { border:1px solid var(--line); border-radius:14px; padding:14px; margin:10px 0; }
-  .mute { color:var(--mute); font-size:14px; }
-  #reader { height:560px; overflow:hidden; position:relative; font:21px/1.65 Georgia, serif; }
-  #reader .inner { padding:0 4px 300px; will-change:transform; }
-  #timer { position:absolute; top:8px; right:12px; background:var(--bg); border:1px solid var(--line); border-radius:99px; padding:4px 12px; font:14px ui-monospace, monospace; z-index:2; }
-  .choice.sel { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
-  .ok { color:var(--ok); } .bad { color:var(--bad); }
-  nav.tabs { display:flex; border-top:1px solid var(--line); }
-  nav.tabs button { border:0; border-radius:0; margin:0; text-align:center; font-size:13px; padding:14px 4px; }
-  nav.tabs button.on { color:var(--accent); font-weight:600; }
-</style>
-</head>
-<body>
-<div class="banner">Preview with sample content. The real app runs on iPhone; this page only shows the flow.</div>
-<div class="phone">
-  <header><span id="title">Smart Alarm</span><span class="mute" id="clock"></span></header>
-  <main id="main"></main>
-  <nav class="tabs">
-    <button data-go="home">Home</button><button data-go="reading">Read</button>
-    <button data-go="quiz">Recall</button><button data-go="notes">Day</button>
-  </nav>
-</div>
+:root{--paper:#f6f0e3;--card:#fbf7ee;--ink:#1d1a16;--mute:#8a8070;--rule:#ddd2bc;--oxblood:#6b1d2a;--gold:#9a7b3c;--navy:#1f2a44;--ok:#2f5d3a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#e9e1cf;color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
+#app{max-width:460px;min-height:100vh;margin:0 auto;background:var(--paper);position:relative;overflow:hidden}
+@media(min-width:520px){#app{margin:24px auto;min-height:840px;border:1px solid var(--rule);box-shadow:0 18px 50px rgba(60,40,10,.12)}}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 4px;color:var(--oxblood);font-size:17px;min-height:48px}
+.bar button{background:none;border:0;color:var(--oxblood);font:inherit;padding:6px 0;cursor:pointer}
+.wrap{padding:0 22px 90px}
+h1{font-size:36px;font-weight:600;letter-spacing:.2px;margin:6px 0 2px}
+h2{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:28px 0 8px}
+.sub{color:var(--mute);font-style:italic;font-size:16px;margin:0 0 14px}
+.list{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:13px 16px;font:inherit;color:inherit;cursor:pointer}
+.row:last-child{border-bottom:0}
+.row .t{font-weight:600;font-size:18px;display:flex;justify-content:space-between;gap:10px}
+.row .t small{font-weight:400;color:var(--mute);font-size:14px;white-space:nowrap}
+.row .p{color:var(--mute);font-size:15px;margin-top:2px;line-height:1.35}
+.lock{width:13px;height:13px;vertical-align:-1px;margin-left:6px;fill:none;stroke:var(--gold);stroke-width:1.8}
+.note p{font-size:18px;line-height:1.62;margin:0 0 14px}
+.note h3{font-size:22px;margin:26px 0 4px;font-weight:600}
+.tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.rule{height:1px;background:var(--rule);margin:22px 0;border:0}
+.cta{display:block;width:100%;margin-top:18px;padding:14px;border:1px solid var(--oxblood);background:var(--oxblood);color:#f6f0e3;border-radius:10px;font:inherit;font-size:17px;letter-spacing:.04em;cursor:pointer}
+.cta.ghost{background:none;color:var(--oxblood)}
+.cta[disabled]{opacity:.35;cursor:default}
+.prog{height:3px;background:var(--rule);margin:10px 0 0}
+.prog i{display:block;height:100%;width:0;background:var(--gold)}
+.q{font-size:21px;line-height:1.4;margin:10px 0 16px}
+.opt{display:block;width:100%;text-align:left;padding:13px 16px;margin:0 0 10px;background:var(--card);border:1px solid var(--rule);border-radius:10px;font:inherit;font-size:17px;color:inherit;cursor:pointer}
+.opt.sel{border-color:var(--oxblood);background:#f3e6e2}
+.tl{position:relative;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.tl li:last-child{border-bottom:0}
+.tl .tm{color:var(--mute);font-size:15px;font-variant-numeric:oldstyle-nums}
+.tl .ti{font-size:18px;font-weight:600}
+.tl .no{font-size:14px;color:var(--mute);font-style:italic}
+.tl .hold .ti{color:var(--gold)}
+.tl .clash .ti{color:var(--oxblood)}
+.chk{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.chk:last-child{border-bottom:0}
+.chk .c{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--gold);margin-top:3px}
+.chk.done .c{background:var(--ok);border-color:var(--ok)}
+.chk.done .tx{color:var(--mute);text-decoration:line-through}
+.chk .src{font-size:13px;color:var(--mute);font-style:italic}
+.foot{position:absolute;bottom:0;left:0;right:0;padding:14px;text-align:center;color:var(--mute);font-size:13px;letter-spacing:.12em;text-transform:uppercase;background:linear-gradient(transparent,var(--paper) 45%)}
+.badge{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--gold);color:var(--gold);padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:3px}
+.big{font-size:54px;text-align:center;margin:30px 0 4px;font-weight:600;color:var(--oxblood)}
+.center{text-align:center}
+</style></head><body><div id="app"></div>
 <script>
-const ISSUE = {
-  title: "Sample issue",
-  sections: [
-    ["Readings (sample)", "Placeholder for the day's Mass readings. In the real app these come from the daily Catholic readings, then a short reflection ties the Gospel to your day."],
-    ["Missed news (sample)", "This slot covers something you missed yesterday that bears on your goals: supply chain, markets, law or health. Each article runs about seven hundred words and cites its source, so you can open the original."],
-    ["Research (sample)", "This slot covers a recent study in one of your fields, in plain language, with what it means for training, nutrition, cognition or your work."],
-    ["Wildcard (sample)", "This slot is whatever else the day's goals call for: a skill, a mental model, a legal or money lesson. The full issue is sized to read in about fifteen minutes."]
-  ]
-};
-const QUIZ = [
-  {q:"What does the research slot cover?", c:["A recent study in one of your fields","Sports scores","Weather","Recipes"], a:0},
-  {q:"How long is a full issue meant to take?", c:["5 minutes","15 minutes","45 minutes","2 hours"], a:1},
-  {q:"What does the missed-news slot cover?", c:["Anything at all","Something you missed that bears on your goals","Only finance","Only local news"], a:1},
-  {q:"What score unlocks the day?", c:["50%","60%","70%","100%"], a:2},
-  {q:"How many tries do you get?", c:["1","2","5","Unlimited"], a:1}
-];
-const TASKS = [
-  {t:"Review recall gate tests", s:"done", src:"github"},
-  {t:"Send weekly report", s:"open"},
-  {t:"Gym: squats and bench", s:"open"},
-  {t:"Call the dentist", s:"pushed"}
-];
-let st = {view:"home", paused:false, secs:900, offset:0, answers:{}, tries:0, result:null, timer:null, raf:null, last:0};
-const $ = s => document.querySelector(s), main = $("#main");
-const mmss = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-setInterval(()=>$("#clock").textContent = new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}), 1000);
-
-function stop(){ cancelAnimationFrame(st.raf); clearInterval(st.timer); st.raf = st.timer = null; }
-function go(v){ stop(); st.view = v; document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on", b.dataset.go===v)); render(); }
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
-
-function render(){
-  const v = st.view; $("#title").textContent = {home:"Smart Alarm",reading:"Today's issue",quiz:"Recall",notes:"Your day"}[v];
-  if(v==="home") main.innerHTML = `
-    <div class="card"><b>7:00 alarm</b><div class="mute">Rings through silent mode. A Read button opens the issue. A safety alarm follows at 7:05.</div></div>
-    <button class="primary" onclick="go('reading')">Read today's issue</button>
-    <p class="mute">Flow: alarm, 15-minute read, recall questions, your day, optional Jarvis rundown.</p>`;
-  if(v==="reading") readerView();
-  if(v==="quiz") quizView();
-  if(v==="notes") notesView();
-}
-
-function readerView(){
-  main.innerHTML = `<div id="reader"><div id="timer">${mmss(st.secs)}</div><div class="inner" id="inner">
-    ${ISSUE.sections.map(([h,b])=>`<h3>${h}</h3><p>${b}</p>`).join("")}</div></div>
-    <button onclick="st.paused=!st.paused;this.textContent=st.paused?'Resume':'Pause'">Pause</button>
-    <button class="primary" onclick="go('quiz')">Done reading: start recall</button>
-    <p class="mute">Demo runs about 40 times faster than the real 15 minutes.</p>`;
-  const inner = $("#inner"), view = $("#reader");
-  st.last = performance.now(); st.offset = 0;
-  const dur = 22000; // demo duration in ms for the whole scroll
-  const step = t => {
-    const dt = t - st.last; st.last = t;
-    if(!st.paused){ const travel = inner.scrollHeight - view.clientHeight; st.offset = Math.min(st.offset + travel*dt/dur, travel); inner.style.transform = `translateY(${-st.offset}px)`; }
-    st.raf = requestAnimationFrame(step);
-  };
-  st.raf = requestAnimationFrame(step);
-  st.timer = setInterval(()=>{ if(!st.paused && st.secs>0){ st.secs -= 40; if(st.secs<0) st.secs=0; $("#timer").textContent = mmss(st.secs);} }, 1000);
-}
-
-function quizView(){
-  if(st.result==="unlocked"){ main.innerHTML = `<div class="card ok"><b>Unlocked.</b></div><button class="primary" onclick="go('notes')">See your day</button>`; return; }
-  if(st.result==="locked"){ main.innerHTML = `<div class="card bad"><b>Out of tries.</b> In the app, an emergency skip is logged here.</div>`; return; }
-  main.innerHTML = QUIZ.map((x,i)=>`<div class="card"><b>${i+1}. ${x.q}</b>${x.c.map((c,j)=>`<button class="choice ${st.answers[i]===j?'sel':''}" onclick="st.answers[${i}]=${j};quizView()">${c}</button>`).join("")}</div>`).join("")
-    + `<button class="primary" ${Object.keys(st.answers).length<QUIZ.length?"disabled":""} onclick="submitQuiz()">Submit (try ${st.tries+1} of 2)</button>`
-    + (st.msg?`<p class="bad">${st.msg}</p>`:"");
-}
-function submitQuiz(){
-  st.tries++; const right = QUIZ.filter((x,i)=>st.answers[i]===x.a).length, pct = Math.round(100*right/QUIZ.length);
-  if(pct>=70){ st.result="unlocked"; st.msg=""; }
-  else if(st.tries>=2){ st.result="locked"; }
-  else { st.msg = `${pct}%. Need 70%. One more try.`; st.answers = {}; }
-  quizView();
-}
-
-function notesView(){
-  main.innerHTML = `<div class="card"><b>Today</b>${TASKS.map(t=>`<div style="padding:6px 0">${t.s==="done"?"✓":t.s==="pushed"?"→":"○"} ${t.t} <span class="mute">${t.s==="done"&&t.src?"detected via "+t.src:t.s==="pushed"?"pushed":""}</span></div>`).join("")}</div>
-    <button onclick="speak()">Play my rundown (Jarvis, opt-in)</button>
-    <p class="mute">Nothing speaks unless you tap. This demo uses your browser's voice; the app uses Fish Audio.</p>
-    <div class="card"><b>10:30pm check</b><div class="mute">1 left: Send weekly report, Gym. 1 detected done.</div></div>`;
-}
-function speak(){
-  const open = TASKS.filter(t=>t.s==="open").map(t=>t.t).join(", ");
-  speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(`Good morning. You have ${TASKS.filter(t=>t.s==="open").length} things on your list: ${open}.`));
-}
-go("home");
-</script>
-</body>
-</html>
+const DATA={"readings": {"cite": "Daniel 7 \u00b7 Luke 21", "gist": "Sample placeholder. The real app fetches the day's Mass readings at 6:00 and shows a short summary here, with the full citation."}, "flag": null, "articles": [{"tag": "Missed news \u00b7 sample copy", "title": "Why central banks watch the job market", "body": ["A central bank cares about jobs because wages feed into prices. When hiring is strong and workers are scarce, employers pay more, and that tends to push inflation up.", "So a surprisingly strong jobs report can move interest rate expectations even when nothing else has changed."]}, {"tag": "Research \u00b7 Mind \u00b7 sample copy", "title": "Retrieval practice beats rereading", "body": ["In a well-known 2006 study, Roediger and Karpicke had students read a passage and then either reread it or take a recall test on it.", "A week later, the students who had been tested remembered more than the students who had reread. Pulling a fact out of memory strengthens it more than seeing it again.", "This is the idea behind the morning recall gate."]}, {"tag": "Wildcard \u00b7 sample copy", "title": "The Antikythera mechanism", "body": ["Divers found this corroded bronze device in a shipwreck off the Greek island of Antikythera in 1901.", "It dates to roughly the second or first century BC. It used a train of gears to model the motions of the sun and moon and to predict eclipses.", "Nothing of comparable complexity appears in the record for well over a thousand years afterwards."]}], "quiz": [{"q": "What did central banks watch because wages feed into prices?", "o": ["The job market", "Rainfall", "Stock splits", "Shipping rates"], "a": 0}, {"q": "Strong hiring tends to push inflation which way?", "o": ["Down", "Up", "No effect", "Only on weekends"], "a": 1}, {"q": "In the 2006 study, what did one group do after reading?", "o": ["Took a recall test", "Slept", "Highlighted", "Left the room"], "a": 0}, {"q": "A week later, who remembered more?", "o": ["The rereaders", "The tested group", "Both the same", "Neither"], "a": 1}, {"q": "Why does retrieval practice work?", "o": ["It is quicker", "Pulling a fact from memory strengthens it", "It is more fun", "It avoids notes"], "a": 1}, {"q": "Where was the Antikythera mechanism found?", "o": ["A Greek shipwreck", "An Egyptian tomb", "A Roman villa", "A Turkish library"], "a": 0}, {"q": "What did it predict?", "o": ["Harvests", "Eclipses", "Wars", "Tides only"], "a": 1}, {"q": "When was it found?", "o": ["1801", "1901", "1951", "2001"], "a": 1}], "date": "Friday, 27 November", "name": "Eli", "mode": "Sample content", "badge": "Preview", "events": [{"start": "08:00", "end": "09:30", "title": "Morning block", "note": "Deep work"}, {"start": "10:00", "end": "11:50", "title": "Lecture", "note": ""}, {"start": "12:00", "end": "13:30", "title": "Lunch with a friend", "note": ""}, {"start": "14:00", "end": "15:50", "title": "Study session", "note": "Library"}, {"start": "17:00", "end": "18:00", "title": "Gym", "note": ""}], "mail": [{"from": "A recruiter", "subject": "Interview scheduling", "why": "Needs a reply"}, {"from": "A club", "subject": "Annual meeting Tuesday", "why": ""}, {"from": "A friend", "subject": "Weekend plans", "why": ""}], "files": [{"title": "Applications tracker", "kind": "Spreadsheet", "when": "Mon"}, {"title": "Project notes", "kind": "Document", "when": "Sat"}, {"title": "Meeting summary", "kind": "Markdown", "when": "Fri"}], "evening": [{"t": "Ship the preview", "done": true, "src": "Detected: commit in your repository"}, {"t": "Reply to the recruiter", "done": false, "src": "No sent mail found"}, {"t": "Read the chapter", "done": true, "src": "Detected: Claude chat on the topic"}]};
+const $=s=>document.querySelector(s);
+let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,timer=null;
+const LOCK='<svg class="lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function go(v){view=v;sel=null;render();window.scrollTo(0,0)}
+function bar(back){return `<div class="bar"><button onclick="go('${back||'home'}')">${back===null?'':'‹ '+(back==='home'||!back?'Notes':'Back')}</button><span></span></div>`}
+function fmt(t){const[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+' '+ap}
+function dayItems(){
+  const items=[{s:'07:00',e:'07:15',t:'Wake-up issue',n:'Readings, three articles, recall',k:''},
+  {s:'07:35',e:'08:00',t:'Breakfast, coffee, walk',n:'Protected',k:'hold'}];
+  DATA.events.forEach(e=>items.push({s:e.start,e:e.end,t:e.title,n:e.note||'',k:''}));
+  items.sort((a,b)=>a.s.localeCompare(b.s));
+  items.forEach((a,i)=>{items.forEach((b,j)=>{if(i!==j&&a.k!=='hold'&&b.k!=='hold'&&a.s<b.e&&b.s<a.e&&a.t!=='Wake-up issue'&&b.t!=='Wake-up issue')a.k='clash'})});
+  return items}
+function rundown(){
+  const ev=DATA.events,c=dayItems().filter(x=>x.k==='clash');
+  let s=`Good morning ${DATA.name}. It is ${DATA.date}. `;
+  s+=ev.length?`You have ${ev.length} things on the calendar, starting with ${ev[0].title} at ${fmt(ev[0].start)}. `:'Your calendar is clear. ';
+  if(c.length)s+=`Heads up, ${c[0].title} overlaps with another event. `;
+  s+=DATA.mail[0]?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
+  s+='Your breakfast block is protected from seven thirty five. That is everything.';return s}
+function speak(){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(rundown());u.rate=.98;speechSynthesis.speak(u)}catch(e){}}
+function home(){
+  const left=DATA.evening.filter(x=>!x.done).length;
+  return `<div class="bar"><span>Folders</span><span style="color:var(--mute);font-size:14px">${esc(DATA.badge||'')}</span></div><div class="wrap">
+  <h1>Wake-Up</h1><p class="sub">${esc(DATA.date)}</p>
+  <h2>Pinned</h2><div class="list">
+  <button class="row" onclick="go('issue')"><div class="t">Morning Issue<small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)} · 3 articles · 15 minutes</div></button>
+  <button class="row" onclick="go('recall')"><div class="t">Recall<small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions · 70% to open the day · two tries</div></button>
+  <button class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?DATA.events.length+' events · breakfast block protected':'Locked until recall is passed'}</div></button>
+  <button class="row" onclick="go('evening')"><div class="t">Evening Check<small>10:30 pm</small></div><div class="p">${left} left over · done detected from your sources</div></button>
+  <button class="row" onclick="go('jarvis')"><div class="t">Jarvis<small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
+  <h2>Sources</h2><div class="list">
+  <button class="row" onclick="go('mail')"><div class="t">Mail<small>${DATA.mail.length}</small></div><div class="p">${esc(DATA.mail[0]?DATA.mail[0].subject:'Nothing new')}</div></button>
+  <button class="row" onclick="go('files')"><div class="t">Files<small>${DATA.files.length}</small></div><div class="p">${esc(DATA.files[0]?DATA.files[0].title:'Nothing recent')}</div></button></div>
+  </div><div class="foot">${DATA.mode||'Mock'}</div>`}
+function issue(){
+  const a=DATA.articles.map((x,i)=>`<h3>${esc(x.title)}</h3><div class="tag">${esc(x.tag)}</div>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
+  return bar()+`<div class="wrap note"><div class="tag">Morning Issue</div><h1 style="font-size:32px">${esc(DATA.date)}</h1>
+  <div class="prog"><i id="pg"></i></div><p class="no" style="color:var(--mute);font-size:14px;font-style:italic;margin:6px 0 0">Reading time runs at 60× in this mock</p>
+  <h3>${esc(DATA.readings.cite)}</h3><p>${esc(DATA.readings.gist)}</p>
+  <p style="color:var(--mute);font-style:italic">${esc(DATA.flag||'No critical issues today.')}</p><hr class="rule">${a}
+  <button class="cta" id="rd" onclick="startRead()">Begin reading</button></div>`}
+function startRead(){
+  const b=$('#rd');b.disabled=true;let t=0;const total=15*60;
+  clearInterval(timer);timer=setInterval(()=>{t+=60;$('#pg').style.width=Math.min(100,t/total*100)+'%';b.textContent='Reading · '+Math.max(0,15-Math.round(t/60))+' min left';
+  if(t>=total){clearInterval(timer);readDone=true;b.disabled=false;b.textContent='Continue to recall';b.onclick=()=>go('recall')}},1000)}
+function recall(){
+  if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button class="cta" onclick="readDone=true;go('recall')">Skip ahead (demo)</button></div>`;
+  if(qi>=DATA.quiz.length){
+    const n=answers.filter((a,i)=>a===DATA.quiz[i].a).length,pct=Math.round(n/DATA.quiz.length*100),pass=pct>=70;
+    if(pass){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length} correct. The day is open.</p><button class="cta" onclick="go('today')">Open Today</button></div>`}
+    return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length}. Seventy percent opens the day.</p>
+    ${tries<1?`<button class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p>Two attempts used.</p><button class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+  const q=DATA.quiz[qi];
+  return bar(null)+`<div class="wrap"><div class="tag">Question ${qi+1} of ${DATA.quiz.length} · attempt ${tries+1} of 2</div><p class="q">${esc(q.q)}</p>
+  ${q.o.map((o,i)=>`<button class="opt ${sel===i?'sel':''}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
+  <button class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next'}</button></div>`}
+function today(){
+  if(!unlocked)return bar()+`<div class="wrap note"><h1>Today${LOCK}</h1><p class="sub">Locked until recall is passed.</p><button class="cta" onclick="go('recall')">Go to recall</button></div>`;
+  const it=dayItems();
+  return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}</p><div class="list" style="padding:2px 16px"><ul class="tl">
+  ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge" style="color:var(--oxblood);border-color:var(--oxblood)">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
+  <button class="cta ghost" onclick="speak()">Play my rundown</button></div>`}
+function evening(){
+  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">10:30 pm · done is detected, not asked</p><div class="list">
+  ${DATA.evening.map(x=>`<div class="chk ${x.done?'done':''}"><div class="c"></div><div><div class="tx">${esc(x.t)}</div><div class="src">${esc(x.src)}</div></div></div>`).join('')}</div>
+  <p class="sub" style="margin-top:14px">Leftovers roll into tomorrow's list.</p></div>`}
+function mail(){return bar()+`<div class="wrap note"><h1>Mail</h1><p class="sub">Since yesterday</p><div class="list">${DATA.mail.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.subject)}</div><div class="p">${esc(m.from)}${m.why?' · '+esc(m.why):''}</div></div>`).join('')}</div></div>`}
+function files(){return bar()+`<div class="wrap note"><h1>Files</h1><p class="sub">Recently touched</p><div class="list">${DATA.files.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.title)}<small>${esc(m.when)}</small></div><div class="p">${esc(m.kind)}</div></div>`).join('')}</div></div>`}
+function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p><button class="cta" onclick="speak()">Play rundown</button><button class="cta ghost" onclick="speechSynthesis.cancel()">Stop</button></div>`}
+function render(){const v={home,issue,recall,today,evening,mail,files,jarvis}[view];$('#app').innerHTML=v()}
+render();
+</script></body></html>

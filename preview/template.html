@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wake-Up</title>
+<style>
+:root{--paper:#f6f0e3;--card:#fbf7ee;--ink:#1d1a16;--mute:#8a8070;--rule:#ddd2bc;--oxblood:#6b1d2a;--gold:#9a7b3c;--navy:#1f2a44;--ok:#2f5d3a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#e9e1cf;color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
+#app{max-width:460px;min-height:100vh;margin:0 auto;background:var(--paper);position:relative;overflow:hidden}
+@media(min-width:520px){#app{margin:24px auto;min-height:840px;border:1px solid var(--rule);box-shadow:0 18px 50px rgba(60,40,10,.12)}}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 4px;color:var(--oxblood);font-size:17px;min-height:48px}
+.bar button{background:none;border:0;color:var(--oxblood);font:inherit;padding:6px 0;cursor:pointer}
+.wrap{padding:0 22px 90px}
+h1{font-size:36px;font-weight:600;letter-spacing:.2px;margin:6px 0 2px}
+h2{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:28px 0 8px}
+.sub{color:var(--mute);font-style:italic;font-size:16px;margin:0 0 14px}
+.list{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:13px 16px;font:inherit;color:inherit;cursor:pointer}
+.row:last-child{border-bottom:0}
+.row .t{font-weight:600;font-size:18px;display:flex;justify-content:space-between;gap:10px}
+.row .t small{font-weight:400;color:var(--mute);font-size:14px;white-space:nowrap}
+.row .p{color:var(--mute);font-size:15px;margin-top:2px;line-height:1.35}
+.lock{width:13px;height:13px;vertical-align:-1px;margin-left:6px;fill:none;stroke:var(--gold);stroke-width:1.8}
+.note p{font-size:18px;line-height:1.62;margin:0 0 14px}
+.note h3{font-size:22px;margin:26px 0 4px;font-weight:600}
+.tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.rule{height:1px;background:var(--rule);margin:22px 0;border:0}
+.cta{display:block;width:100%;margin-top:18px;padding:14px;border:1px solid var(--oxblood);background:var(--oxblood);color:#f6f0e3;border-radius:10px;font:inherit;font-size:17px;letter-spacing:.04em;cursor:pointer}
+.cta.ghost{background:none;color:var(--oxblood)}
+.cta[disabled]{opacity:.35;cursor:default}
+.prog{height:3px;background:var(--rule);margin:10px 0 0}
+.prog i{display:block;height:100%;width:0;background:var(--gold)}
+.q{font-size:21px;line-height:1.4;margin:10px 0 16px}
+.opt{display:block;width:100%;text-align:left;padding:13px 16px;margin:0 0 10px;background:var(--card);border:1px solid var(--rule);border-radius:10px;font:inherit;font-size:17px;color:inherit;cursor:pointer}
+.opt.sel{border-color:var(--oxblood);background:#f3e6e2}
+.tl{position:relative;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.tl li:last-child{border-bottom:0}
+.tl .tm{color:var(--mute);font-size:15px;font-variant-numeric:oldstyle-nums}
+.tl .ti{font-size:18px;font-weight:600}
+.tl .no{font-size:14px;color:var(--mute);font-style:italic}
+.tl .hold .ti{color:var(--gold)}
+.tl .clash .ti{color:var(--oxblood)}
+.chk{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.chk:last-child{border-bottom:0}
+.chk .c{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--gold);margin-top:3px}
+.chk.done .c{background:var(--ok);border-color:var(--ok)}
+.chk.done .tx{color:var(--mute);text-decoration:line-through}
+.chk .src{font-size:13px;color:var(--mute);font-style:italic}
+.foot{position:absolute;bottom:0;left:0;right:0;padding:14px;text-align:center;color:var(--mute);font-size:13px;letter-spacing:.12em;text-transform:uppercase;background:linear-gradient(transparent,var(--paper) 45%)}
+.badge{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--gold);color:var(--gold);padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:3px}
+.big{font-size:54px;text-align:center;margin:30px 0 4px;font-weight:600;color:var(--oxblood)}
+.center{text-align:center}
+</style></head><body><div id="app"></div>
+<script>
+const DATA=/*DATA*/null;
+const $=s=>document.querySelector(s);
+let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,timer=null;
+const LOCK='<svg class="lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function go(v){view=v;sel=null;render();window.scrollTo(0,0)}
+function bar(back){return `<div class="bar"><button onclick="go('${back||'home'}')">${back===null?'':'‹ '+(back==='home'||!back?'Notes':'Back')}</button><span></span></div>`}
+function fmt(t){const[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+' '+ap}
+function dayItems(){
+  const items=[{s:'07:00',e:'07:15',t:'Wake-up issue',n:'Readings, three articles, recall',k:''},
+  {s:'07:35',e:'08:00',t:'Breakfast, coffee, walk',n:'Protected',k:'hold'}];
+  DATA.events.forEach(e=>items.push({s:e.start,e:e.end,t:e.title,n:e.note||'',k:''}));
+  items.sort((a,b)=>a.s.localeCompare(b.s));
+  items.forEach((a,i)=>{items.forEach((b,j)=>{if(i!==j&&a.k!=='hold'&&b.k!=='hold'&&a.s<b.e&&b.s<a.e&&a.t!=='Wake-up issue'&&b.t!=='Wake-up issue')a.k='clash'})});
+  return items}
+function rundown(){
+  const ev=DATA.events,c=dayItems().filter(x=>x.k==='clash');
+  let s=`Good morning ${DATA.name}. It is ${DATA.date}. `;
+  s+=ev.length?`You have ${ev.length} things on the calendar, starting with ${ev[0].title} at ${fmt(ev[0].start)}. `:'Your calendar is clear. ';
+  if(c.length)s+=`Heads up, ${c[0].title} overlaps with another event. `;
+  s+=DATA.mail[0]?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
+  s+='Your breakfast block is protected from seven thirty five. That is everything.';return s}
+function speak(){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(rundown());u.rate=.98;speechSynthesis.speak(u)}catch(e){}}
+function home(){
+  const left=DATA.evening.filter(x=>!x.done).length;
+  return `<div class="bar"><span>Folders</span><span style="color:var(--mute);font-size:14px">${esc(DATA.badge||'')}</span></div><div class="wrap">
+  <h1>Wake-Up</h1><p class="sub">${esc(DATA.date)}</p>
+  <h2>Pinned</h2><div class="list">
+  <button class="row" onclick="go('issue')"><div class="t">Morning Issue<small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)} · 3 articles · 15 minutes</div></button>
+  <button class="row" onclick="go('recall')"><div class="t">Recall<small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions · 70% to open the day · two tries</div></button>
+  <button class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?DATA.events.length+' events · breakfast block protected':'Locked until recall is passed'}</div></button>
+  <button class="row" onclick="go('evening')"><div class="t">Evening Check<small>10:30 pm</small></div><div class="p">${left} left over · done detected from your sources</div></button>
+  <button class="row" onclick="go('jarvis')"><div class="t">Jarvis<small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
+  <h2>Sources</h2><div class="list">
+  <button class="row" onclick="go('mail')"><div class="t">Mail<small>${DATA.mail.length}</small></div><div class="p">${esc(DATA.mail[0]?DATA.mail[0].subject:'Nothing new')}</div></button>
+  <button class="row" onclick="go('files')"><div class="t">Files<small>${DATA.files.length}</small></div><div class="p">${esc(DATA.files[0]?DATA.files[0].title:'Nothing recent')}</div></button></div>
+  </div><div class="foot">${DATA.mode||'Mock'}</div>`}
+function issue(){
+  const a=DATA.articles.map((x,i)=>`<h3>${esc(x.title)}</h3><div class="tag">${esc(x.tag)}</div>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
+  return bar()+`<div class="wrap note"><div class="tag">Morning Issue</div><h1 style="font-size:32px">${esc(DATA.date)}</h1>
+  <div class="prog"><i id="pg"></i></div><p class="no" style="color:var(--mute);font-size:14px;font-style:italic;margin:6px 0 0">Reading time runs at 60× in this mock</p>
+  <h3>${esc(DATA.readings.cite)}</h3><p>${esc(DATA.readings.gist)}</p>
+  <p style="color:var(--mute);font-style:italic">${esc(DATA.flag||'No critical issues today.')}</p><hr class="rule">${a}
+  <button class="cta" id="rd" onclick="startRead()">Begin reading</button></div>`}
+function startRead(){
+  const b=$('#rd');b.disabled=true;let t=0;const total=15*60;
+  clearInterval(timer);timer=setInterval(()=>{t+=60;$('#pg').style.width=Math.min(100,t/total*100)+'%';b.textContent='Reading · '+Math.max(0,15-Math.round(t/60))+' min left';
+  if(t>=total){clearInterval(timer);readDone=true;b.disabled=false;b.textContent='Continue to recall';b.onclick=()=>go('recall')}},1000)}
+function recall(){
+  if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button class="cta" onclick="readDone=true;go('recall')">Skip ahead (demo)</button></div>`;
+  if(qi>=DATA.quiz.length){
+    const n=answers.filter((a,i)=>a===DATA.quiz[i].a).length,pct=Math.round(n/DATA.quiz.length*100),pass=pct>=70;
+    if(pass){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length} correct. The day is open.</p><button class="cta" onclick="go('today')">Open Today</button></div>`}
+    return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length}. Seventy percent opens the day.</p>
+    ${tries<1?`<button class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p>Two attempts used.</p><button class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+  const q=DATA.quiz[qi];
+  return bar(null)+`<div class="wrap"><div class="tag">Question ${qi+1} of ${DATA.quiz.length} · attempt ${tries+1} of 2</div><p class="q">${esc(q.q)}</p>
+  ${q.o.map((o,i)=>`<button class="opt ${sel===i?'sel':''}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
+  <button class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next'}</button></div>`}
+function today(){
+  if(!unlocked)return bar()+`<div class="wrap note"><h1>Today${LOCK}</h1><p class="sub">Locked until recall is passed.</p><button class="cta" onclick="go('recall')">Go to recall</button></div>`;
+  const it=dayItems();
+  return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}</p><div class="list" style="padding:2px 16px"><ul class="tl">
+  ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge" style="color:var(--oxblood);border-color:var(--oxblood)">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
+  <button class="cta ghost" onclick="speak()">Play my rundown</button></div>`}
+function evening(){
+  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">10:30 pm · done is detected, not asked</p><div class="list">
+  ${DATA.evening.map(x=>`<div class="chk ${x.done?'done':''}"><div class="c"></div><div><div class="tx">${esc(x.t)}</div><div class="src">${esc(x.src)}</div></div></div>`).join('')}</div>
+  <p class="sub" style="margin-top:14px">Leftovers roll into tomorrow's list.</p></div>`}
+function mail(){return bar()+`<div class="wrap note"><h1>Mail</h1><p class="sub">Since yesterday</p><div class="list">${DATA.mail.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.subject)}</div><div class="p">${esc(m.from)}${m.why?' · '+esc(m.why):''}</div></div>`).join('')}</div></div>`}
+function files(){return bar()+`<div class="wrap note"><h1>Files</h1><p class="sub">Recently touched</p><div class="list">${DATA.files.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.title)}<small>${esc(m.when)}</small></div><div class="p">${esc(m.kind)}</div></div>`).join('')}</div></div>`}
+function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p><button class="cta" onclick="speak()">Play rundown</button><button class="cta ghost" onclick="speechSynthesis.cancel()">Stop</button></div>`}
+function render(){const v={home,issue,recall,today,evening,mail,files,jarvis}[view];$('#app').innerHTML=v()}
+render();
+</script></body></html>
