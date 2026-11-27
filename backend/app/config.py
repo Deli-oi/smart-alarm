@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     github_token: str = ""
     timezone: str = "America/New_York"
     debug: bool = False
+    nango_url: str = ""  # your self-hosted Nango, e.g. https://nango.example.com
+    nango_secret_key: str = ""
+    nango_drive_integration: str = "google-drive"  # integration id you create in Nango
+    nango_drive_connection: str = ""  # connection id created when you log in through Nango
     token_enc_key: str = ""  # Fernet key for stored OAuth tokens; keep it out of the database host
     store: str = "mongo"  # "memory" runs without Atlas, for local dev and UI testing
     cors_origins: str = "*"  # comma separated; bearer token still guards every data route

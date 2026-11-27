@@ -45,6 +45,16 @@ async def build_evening_check() -> None:
         from .sources.gmail_imap import GmailSentAdapter
 
         adapters.append(GmailSentAdapter(s.gmail_user, s.gmail_app_password))
+    if s.nango_url and s.nango_secret_key and s.nango_drive_connection:
+        from .oauth.nango import NangoTokens
+        from .sources.drive import DriveAdapter
+
+        tokens = NangoTokens(s.nango_url, s.nango_secret_key)
+
+        async def drive_token() -> str:
+            return await tokens.access_token(s.nango_drive_integration, s.nango_drive_connection)
+
+        adapters.append(DriveAdapter(drive_token))
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
     await run_evening_check(today(), since, MongoStore(get_db()), adapters)
 
