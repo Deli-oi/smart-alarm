@@ -33,6 +33,9 @@ class Store(Protocol):
     async def list_skips(self, day: str) -> list[dict]: ...
     async def gate_open(self, day: str) -> bool: ...
     async def recent_mornings(self, days: list[str]) -> list[dict]: ...
+    async def save_readings(self, day: str, sections: list[dict]) -> None: ...
+    async def get_readings(self, day: str) -> list[dict] | None: ...
+    async def list_issue_dates(self, limit: int = 60) -> list[dict]: ...
     async def add_note(self, day: str, note: Note) -> None: ...
     async def list_notes(self, day: str) -> list[Note]: ...
     async def mark_notes_sent(self, day: str, at: str) -> int: ...
@@ -58,6 +61,19 @@ class MongoStore:
         await self.db.quiz_attempts.insert_one(
             {"date": day, "score": score, "passed": passed, "at": _now()}
         )
+
+    async def save_readings(self, day: str, sections: list[dict]) -> None:
+        await self.db.readings.update_one(
+            {"date": day}, {"$set": {"date": day, "sections": sections, "fetched_at": _now()}}, upsert=True
+        )
+
+    async def get_readings(self, day: str) -> list[dict] | None:
+        doc = await self.db.readings.find_one({"date": day}, {"_id": 0})
+        return doc["sections"] if doc else None
+
+    async def list_issue_dates(self, limit: int = 60) -> list[dict]:
+        cur = self.db.issues.find({}, {"_id": 0, "date": 1, "articles.title": 1}).sort("date", -1).limit(limit)
+        return [{"date": d["date"], "titles": [a["title"] for a in d.get("articles", [])]} async for d in cur]
 
     async def recent_mornings(self, days: list[str]) -> list[dict]:
         cur = self.db.quiz_attempts.find({"date": {"$in": days}}, {"_id": 0}).sort("at", 1)
@@ -143,6 +159,7 @@ class InMemoryStore:
         self.summaries: dict[str, str] = {}
         self.days: dict[str, dict] = {}
         self.skips: list[dict] = []
+        self.readings: dict[str, list[dict]] = {}
         self.notes: list[tuple[str, Note]] = []
         self.processing: set[str] = set()
 
@@ -157,6 +174,16 @@ class InMemoryStore:
 
     async def record_attempt(self, day: str, score: float, passed: bool) -> None:
         self.attempts.append({"date": day, "score": score, "passed": passed, "at": _now()})
+
+    async def save_readings(self, day: str, sections: list[dict]) -> None:
+        self.readings[day] = sections
+
+    async def get_readings(self, day: str) -> list[dict] | None:
+        return self.readings.get(day)
+
+    async def list_issue_dates(self, limit: int = 60) -> list[dict]:
+        rows = [{"date": d, "titles": [a.title for a in i.articles]} for d, i in self.issues.items()]
+        return sorted(rows, key=lambda r: r["date"], reverse=True)[:limit]
 
     async def recent_mornings(self, days: list[str]) -> list[dict]:
         return sorted([a for a in self.attempts if a["date"] in days], key=lambda a: a.get("at", ""))

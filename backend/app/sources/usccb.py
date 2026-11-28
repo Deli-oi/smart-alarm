@@ -79,8 +79,12 @@ def format_for_prompt(sections: list[dict]) -> str:
     return "\n\n".join(f"{s['label']} ({s['reference']})\n{s['text']}" for s in sections)
 
 
-async def fetch_readings_text(day: date, url: str = FEED) -> str:
+async def fetch_sections(day: date, url: str = FEED) -> list[dict]:
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as c:
         r = await c.get(url, headers={"User-Agent": "smart-alarm/0.1 (personal use)"})
         r.raise_for_status()
-    return format_for_prompt(pick_readings(r.text, day))
+    return pick_readings(r.text, day)
+
+
+async def fetch_readings_text(day: date, url: str = FEED) -> str:
+    return format_for_prompt(await fetch_sections(day, url))

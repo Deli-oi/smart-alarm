@@ -216,6 +216,44 @@ async def jarvis_speak(store: Store = Depends(get_store)) -> StreamingResponse:
     return StreamingResponse(fish_speech(text), media_type="audio/mpeg")
 
 
+@app.get("/readings/today", dependencies=auth)
+async def readings_today(store: Store = Depends(get_store)) -> dict:
+    """Today's Mass readings, fetched server-side and kept in the database.
+
+    The morning automation reads them from there rather than fetching the feed itself: a
+    scheduled run asking to visit a website has to ask for approval, and nobody is awake at
+    5:37 to give it. See docs/DECISIONS.md.
+    """
+    day = today()
+    stored = await store.get_readings(day)
+    if stored is not None:
+        return {"date": day, "sections": stored, "source": "stored"}
+    try:
+        from datetime import date as _date
+
+        from .sources.usccb import fetch_sections
+
+        sections = await fetch_sections(_date.fromisoformat(day))
+        await store.save_readings(day, sections)
+        return {"date": day, "sections": sections, "source": "fetched"}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"readings unavailable: {exc}") from exc
+
+
+@app.get("/issues", dependencies=auth)
+async def issue_archive(store: Store = Depends(get_store)) -> list[dict]:
+    """Every issue ever written, newest first. Nothing is ever deleted."""
+    return await store.list_issue_dates()
+
+
+@app.get("/issue/{day}", dependencies=auth)
+async def issue_by_date(day: str, store: Store = Depends(get_store)) -> Issue:
+    issue = await store.get_issue(day)
+    if issue is None:
+        raise HTTPException(status_code=404, detail=f"no issue for {day}")
+    return issue
+
+
 @app.get("/regularity", dependencies=auth)
 async def regularity(store: Store = Depends(get_store)) -> dict:
     """Consistency of his start time, which is the best-evidenced thing this app can measure.

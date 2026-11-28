@@ -76,6 +76,10 @@ def make_scheduler() -> AsyncIOScheduler:
     scheduler.add_job(
         build_daily_issue, "cron", hour=6, minute=0, id="daily_issue", replace_existing=True
     )
+    # 05:05, half an hour before the automation looks for them.
+    scheduler.add_job(
+        cache_readings, "cron", hour=5, minute=5, id="cache_readings", replace_existing=True
+    )
     # 22:20, deliberately before the Claude-account automation at 22:27: this job contributes
     # the sources that need credentials (GitHub), and the automation, running last, sees those
     # marks and has the final say on the summary text.

@@ -19,6 +19,29 @@ on the single 10:30 run for now rather than spend that.
 So the flag is best read as "he wanted this sooner", not as a trigger. If an agent later adds a
 poller, update this entry and `docs/AUTOMATION.md` together, and say what the usage costs.
 
+## Nothing in a scheduled run may wait for an approval
+
+*28 November 2026.* This cost a morning before it was understood. A scheduled run has nobody
+sitting there, so any call that asks for approval hangs until it times out, and the run then
+reports **success** having written nothing. The 5:37 run on the 28th sat for thirteen minutes on
+a `delete-many` and left the database untouched, and the evening run before it almost certainly
+did the same.
+
+Two rules, both in the task prompts:
+
+- **No destructive database calls.** No delete-many, drop-collection or drop-database. To replace
+  a document, `update-many` with `upsert: true` and `$set` the whole document. It creates when
+  absent, overwrites when present, and needs no approval. Tested against the live database.
+- **No fetching the web where the database already has it.** Visiting a site prompts too, and the
+  prompt recurs on every run because each run is a fresh session, so granting it once in the app
+  does not carry over. The backend now fetches the Mass readings at 5:05 and stores them, and the
+  automation reads the `readings` collection. The WebFetch path survives only as a fallback, with
+  an instruction to abandon it the moment it asks.
+
+The tempting fix, granting the connector standing permission to delete, was rejected: an
+unattended 5:37 run with delete rights over the only copy of the data is a worse trade than
+simply not needing it.
+
 ## No sleep-stage detection, ever, on a phone
 
 *28 November 2026.* The category's signature feature is an alarm that fires when it thinks you
@@ -119,6 +142,12 @@ they are not part of the running system.
 *28 November 2026.* The Home Screen install caches the page so it opens without a connection, but
 network first with the cache as fallback, not the other way round. Cache first would keep serving
 a stale app for days after a push, and this page changes far more often than it is opened.
+
+## Every issue is kept
+
+*28 November 2026.* One document per day in `issues`, and nothing ever deletes them; the upsert
+rule above makes that structural rather than a matter of care. `GET /issues` lists them newest
+first and `GET /issue/{date}` reads one, behind an Archive screen in the app.
 
 # Wanted next
 

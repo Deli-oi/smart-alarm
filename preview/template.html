@@ -405,6 +405,7 @@ function home(){
   <h2>Sources</h2><div class="list">
   <button type="button" class="row" onclick="go('mail')"><div class="t"><span>Mail</span><small>${mail.length}</small></div><div class="p">${esc(mail[0]?mail[0].subject:'Nothing new')}</div></button>
   <button type="button" class="row" onclick="go('log')"><div class="t"><span>Day log</span><small>${(DATA.notes||[]).length}</small></div><div class="p">${esc((DATA.notes||[])[0]?(DATA.notes||[]).slice(-1)[0].text:'Anything you want tonight to act on')}</div></button>
+  <button type="button" class="row" onclick="openArchive()"><div class="t"><span>Archive</span><small>${archList?archList.length:''}</small></div><div class="p">Every past issue, kept</div></button>
   <button type="button" class="row" onclick="go('files')"><div class="t"><span>Files</span><small>${files.length}</small></div><div class="p">${esc(files[0]?files[0].title:'Nothing recent')}</div></button></div>
   </div>`}
 /* Nothing reliably clears sleep inertia inside the first fifteen minutes, and brief
@@ -449,6 +450,43 @@ function regLine(){
   const steady=r.on_time>=r.mornings-1&&r.spread_minutes<=45;
   return `<p class="sub">${r.mornings} mornings in the last ${r.window_days}, usually around ${esc(r.usual)}.`
     +(steady?' Steady.':` ${r.on_time} of them within half an hour of that.`)+`</p>`;
+}
+/* Past issues are never deleted, one document per day, so the archive is just a read.
+   Fetched on demand rather than with everything else: he opens it rarely. */
+let archList=null,archIssue=null,archMsg='';
+async function openArchive(){
+  go('archive');
+  if(!live){archMsg='Connect a server to read past issues.';render();return}
+  if(archList)return;
+  try{archList=await api('/issues').then(r=>r.json())}catch(e){archMsg=String(e.message||e)}
+  render();
+}
+async function openIssue(date){
+  archIssue={date:date,loading:true};render();
+  try{archIssue=await api('/issue/'+encodeURIComponent(date)).then(r=>r.json())}
+  catch(e){archIssue={date:date,error:String(e.message||e)}}
+  render();
+}
+function archive(){
+  if(archIssue){
+    const i=archIssue;
+    if(i.loading)return bar('archive')+`<div class="wrap center"><p class="sub" aria-live="polite">Opening\u2026</p></div>`;
+    if(i.error)return bar('archive')+`<div class="wrap note"><h1>${esc(i.date)}</h1><p class="err">${esc(i.error)}</p></div>`;
+    return `<div class="bar"><button type="button" onclick="archIssue=null;render()">\u2039 Archive</button><span></span></div>`
+      +`<div class="wrap note"><p class="kind">${esc(fmtDate(i.date))}</p>
+      <h3>${esc((i.readings||[]).map(r=>r.reference).join(' and '))}</h3>
+      <p>${esc(i.reflection||'')}</p><hr class="rule">
+      ${(i.articles||[]).map(a=>`<h3>${esc(a.title)}</h3><p class="kind">${esc(KIND[a.kind]||a.kind)}</p>`
+        +a.body.split(/\n\s*\n/).map(x=>`<p>${esc(x)}</p>`).join('')).join('<hr class="rule">')}</div>`;
+  }
+  const rows=archList||[];
+  return bar('home')+`<div class="wrap note"><h1>Archive</h1>
+  <p class="sub">Every issue is kept. Nothing is deleted.</p>
+  ${archMsg?`<p class="err">${esc(archMsg)}</p>`:''}
+  <div class="list">${rows.length?rows.map(r=>`<button type="button" class="row" onclick="openIssue('${esc(r.date)}')">
+    <div class="t"><span>${esc(fmtDate(r.date))}</span></div>
+    <div class="p">${esc((r.titles||[]).join(' \u2014 '))}</div></button>`).join('')
+    :`<p class="empty">${live?'No issues yet.':'Connect a server to read past issues.'}</p>`}</div></div>`;
 }
 function issue(){
   const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
@@ -668,7 +706,7 @@ function forgetServer(){
   boot();
 }
 function render(){
-  const v={home,wake,issue,recall,today,evening,mail,files,jarvis,settings,log:logView}[view];
+  const v={home,wake,issue,recall,today,evening,mail,files,jarvis,settings,archive,log:logView}[view];
   const jot=view==='log'?'':'<button type="button" class="jot" onclick="go(\'log\')">Note</button>';
   $('#app').innerHTML=v()+jot;
   paintVoice();

@@ -18,7 +18,20 @@ needs no approval.
   a new one. Build it in full FIRST, then write it with a single update-many upsert on
   {"date": D}, so a run that fails halfway leaves him with the old issue rather than nothing.
 
-1. READINGS. WebFetch https://bible.usccb.org/readings.rss and find the item whose link ends with MMDDYY.cfm for D (some feast days have extra navigation-only items; use the one with reading text). For each of Reading 1, Responsorial Psalm, Gospel (and Reading 2 if present) record label, citation, and a 2 to 3 sentence PARAPHRASE in your own words. Never copy the reading text verbatim. If the feed has no item for D, use the standard lectionary citations if you are sure of them, and say so in the text; otherwise leave readings to the citation you can verify.
+1. READINGS. Read them from the database, not from the web. find in collection "readings" where
+   date is D; the document holds "sections", each with label, reference and text. The backend
+   fetches and stores these at 5:05 precisely so this run does not have to visit a website:
+   asking to do that needs an approval nobody is awake to give, and the run hangs.
+
+   Write a 2 to 3 sentence PARAPHRASE of each section in your own words. Never copy the text
+   verbatim into the issue.
+
+   If and only if there is no readings document for D, you may try WebFetch on
+   https://bible.usccb.org/readings.rss (the item whose link ends with MMDDYY.cfm for D; some
+   feast days carry navigation-only items, so take the one with reading text). If that stops to
+   ask for approval, abandon it at once. Then fall back to the standard lectionary citations if
+   you are sure of them, saying so in the text, and otherwise give only the citation you can
+   verify. Note the miss in your final report.
 
 2. ISSUE. This is a fifteen-minute read. That is the whole point of it, and a four-minute issue
    is a failed run. Use web search for real, recent sources; paraphrase, never copy. Exactly three
