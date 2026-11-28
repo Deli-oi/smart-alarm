@@ -63,6 +63,9 @@ class Note(BaseModel):
     at: str  # ISO 8601, UTC
     text: str = Field(min_length=1, max_length=4000)
     kind: Literal["note", "reply"] = "note"
+    # Set when the entry is handed to the evening run. Handed over, not acted on: nothing
+    # polls the flag, so the work itself happens at 10:30.
+    sent_at: str = ""
 
 
 class NoteRequest(BaseModel):

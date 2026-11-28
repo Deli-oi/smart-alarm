@@ -160,9 +160,13 @@ async def notes_markdown(store: Store = Depends(get_store)) -> PlainTextResponse
 
 @app.post("/notes/process-now", dependencies=auth)
 async def process_now(store: Store = Depends(get_store)) -> dict:
-    """Ask for the day log to be acted on before 10:30. The evening automation clears this."""
-    await store.set_processing(today(), True)
-    return {"requested": True, "date": today()}
+    """Hand the day log to the evening run. Nothing polls the flag, so this marks the entries
+    as handed over and the work happens at 10:30. See docs/DECISIONS.md."""
+    day = today()
+    at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    sent = await store.mark_notes_sent(day, at)
+    await store.set_processing(day, True)
+    return {"requested": True, "date": day, "sent": sent, "at": at}
 
 
 @app.get("/notes/pending", dependencies=auth)

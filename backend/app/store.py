@@ -35,6 +35,7 @@ class Store(Protocol):
     async def recent_mornings(self, days: list[str]) -> list[dict]: ...
     async def add_note(self, day: str, note: Note) -> None: ...
     async def list_notes(self, day: str) -> list[Note]: ...
+    async def mark_notes_sent(self, day: str, at: str) -> int: ...
     async def set_processing(self, day: str, requested: bool) -> None: ...
     async def processing_requested(self, day: str) -> bool: ...
 
@@ -79,6 +80,14 @@ class MongoStore:
     async def list_notes(self, day: str) -> list[Note]:
         docs = [d async for d in self.db.notes.find({"date": day}, {"_id": 0, "date": 0}).sort("at", 1)]
         return [Note(**d) for d in docs]
+
+    async def mark_notes_sent(self, day: str, at: str) -> int:
+        """Only entries not already handed over, so a second tap marks nothing twice."""
+        r = await self.db.notes.update_many(
+            {"date": day, "$or": [{"sent_at": {"$exists": False}}, {"sent_at": ""}]},
+            {"$set": {"sent_at": at}},
+        )
+        return r.modified_count
 
     async def set_processing(self, day: str, requested: bool) -> None:
         await self.db.day_log.update_one(
@@ -167,6 +176,14 @@ class InMemoryStore:
 
     async def list_notes(self, day: str) -> list[Note]:
         return sorted([n for d, n in self.notes if d == day], key=lambda n: n.at)
+
+    async def mark_notes_sent(self, day: str, at: str) -> int:
+        n = 0
+        for d, note in self.notes:
+            if d == day and not note.sent_at:
+                note.sent_at = at
+                n += 1
+        return n
 
     async def set_processing(self, day: str, requested: bool) -> None:
         self.processing.add(day) if requested else self.processing.discard(day)

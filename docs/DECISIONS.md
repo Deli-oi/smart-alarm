@@ -9,6 +9,9 @@ these look like oversights until you know the reason. Newest first.
 sets `process_requested` on the day's `day_log` document. **Nothing polls for that flag.** The
 only thing that reads it is the 10:30 evening run, which honours it and then clears it.
 
+The button marks the day's entries with a `sent_at` stamp and the app moves them below the
+button under a tick, so handing over is visible. A tick means handed over, not acted on.
+
 An on-demand run would need a scheduled task firing on a short cycle, and the floor for those is
 hourly, which is 24 sessions a day against the account's usage. Eli decided to keep every update
 on the single 10:30 run for now rather than spend that.

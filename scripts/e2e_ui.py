@@ -188,9 +188,37 @@ async def main() -> int:
         await pg.wait_for_timeout(400)
         check("the note survives a reload", "move the gym to six" in await pg.inner_text("#app"))
 
-        await pg.click("text=Send it to Claude now")
-        await pg.wait_for_timeout(900)
-        check("handing it over is confirmed", "Handed over" in await pg.inner_text("#app"))
+        # --- handing the day over: the entry has to visibly move, below the button, ticked
+        sends: list[str] = []
+        pg.on("request", lambda r: sends.append(r.url) if "/notes/process-now" in r.url else None)
+        btn = pg.locator("#jsend")
+        check("the send button is live while something waits", await btn.is_enabled())
+        # Two taps in the same tick, which is what a real double-tap is: the button has not
+        # been re-rendered as disabled yet, so only the in-code guard can stop the second.
+        await pg.evaluate("processNow();processNow()")
+        await pg.wait_for_timeout(1800)
+        check("a double tap hands over once", len(sends) == 1, f"{len(sends)} posts")
+
+        txt = await pg.inner_text("#app")
+        check("the hand-over is confirmed", "10:30 run acts on it" in txt, txt[:200])
+        check("the entry is ticked", "\u2713" in txt, txt[:200])
+        check("it moved to handed over", "Handed over" in txt and "Waiting," not in txt, txt[:200])
+        check("the button stops offering", not await btn.is_enabled())
+
+        # the confirmation must sit below the button he pressed, not above it
+        order = await pg.evaluate(
+            "(()=>{const b=document.querySelector('#jsend');"
+            "const h=[...document.querySelectorAll('h2')].find(e=>e.textContent.startsWith('Handed over'));"
+            "return h? b.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING ? 'below':'above' : 'missing'})()"
+        )
+        check("handed-over entries render below the button", order == "below", order)
+
+        await pg.reload()
+        await pg.wait_for_timeout(2500)
+        await pg.evaluate("go('log')")
+        await pg.wait_for_timeout(400)
+        txt = await pg.inner_text("#app")
+        check("the hand-over survives a reload", "Handed over" in txt and "\u2713" in txt, txt[:200])
 
         await pg.evaluate("go('home')")
         await pg.wait_for_timeout(300)

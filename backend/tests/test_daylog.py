@@ -30,7 +30,7 @@ def test_notes_round_trip_and_markdown(monkeypatch):
         md = c.get("/notes/today.md", headers=HEADERS)
         assert md.headers["content-type"].startswith("text/markdown")
         assert "move the gym to six" in md.text
-        assert "(replied)" in md.text
+        assert "(replied, waiting)" in md.text
     finally:
         main.app.dependency_overrides.clear()
 
@@ -51,6 +51,34 @@ def test_process_now_flag(monkeypatch):
         assert c.get("/notes/pending", headers=HEADERS).json()["requested"] is False
         c.post("/notes/process-now", headers=HEADERS)
         assert c.get("/notes/pending", headers=HEADERS).json()["requested"] is True
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+def test_handing_over_stamps_the_entries_once(monkeypatch):
+    """A second tap must not restamp: the first hand-over time is the true one."""
+    monkeypatch.setattr(main.get_settings(), "api_token", "testtok")
+    store = InMemoryStore()
+    try:
+        c = _client(store)
+        c.post("/notes", json={"text": "move the gym to six"}, headers=HEADERS)
+        c.post("/notes", json={"text": "book the flight"}, headers=HEADERS)
+        assert all(not n["sent_at"] for n in c.get("/notes/today", headers=HEADERS).json())
+
+        first = c.post("/notes/process-now", headers=HEADERS).json()
+        assert first["sent"] == 2
+        stamped = [n["sent_at"] for n in c.get("/notes/today", headers=HEADERS).json()]
+        assert all(stamped)
+
+        again = c.post("/notes/process-now", headers=HEADERS).json()
+        assert again["sent"] == 0
+        assert [n["sent_at"] for n in c.get("/notes/today", headers=HEADERS).json()] == stamped
+
+        # a note written after the hand-over is waiting again
+        c.post("/notes", json={"text": "and call mum"}, headers=HEADERS)
+        notes = c.get("/notes/today", headers=HEADERS).json()
+        assert [bool(n["sent_at"]) for n in notes] == [True, True, False]
+        assert "(note, handed over)" in c.get("/notes/today.md", headers=HEADERS).text
     finally:
         main.app.dependency_overrides.clear()
 

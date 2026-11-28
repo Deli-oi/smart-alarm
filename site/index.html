@@ -155,6 +155,9 @@ h3{font-size:23px;margin:26px 0 6px;font-weight:600;text-wrap:balance}
 .ta:focus{border-color:var(--brass)}
 .entry{padding:12px 16px;border-bottom:1px solid var(--rule);font-size:17px;line-height:1.45}
 .entry:last-child{border-bottom:0}
+.entry.sent{color:var(--mute)}
+.entry.sent .tm{color:var(--ok);font-style:normal}
+.tick{margin-right:6px;font-weight:700}
 .entry .tm{color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:2px}
 .pair .cta{flex:1;min-width:0;font-size:16px}
 
@@ -271,7 +274,7 @@ async function loadLive(){
   }else miss.push('the day plan');
   try{
     const N=await api('/notes/today').then(r=>r.json());
-    d.notes=N.map(x=>({when:localTime(x.at),text:x.text}));
+    d.notes=N.map(x=>({when:localTime(x.at),text:x.text,sent:x.sent_at?localTime(x.sent_at):''}));
   }catch(e){d.notes=[]}
   try{d.summary=(await api('/evening/summary').then(r=>r.json())).text||''}catch(e){d.summary=''}
   try{d.reg=await api('/regularity').then(r=>r.json())}catch(e){d.reg=null}
@@ -516,9 +519,11 @@ async function emergencySkip(){
 }
 
 /* ---- the day log ---- */
-let logDraft='',logBusy='',logMsg='';
+let logDraft='',logBusy='',logMsg='',sendMsg='',sending=false;
 function logView(){
   const n=DATA.notes||[];
+  const waiting=n.filter(x=>!x.sent), sent=n.filter(x=>x.sent);
+  const rows=list=>list.map(x=>`<div class="entry"><div class="tm">${esc(x.when)}</div>${esc(x.text)}</div>`).join('');
   return bar('home')+`<div class="wrap note">
   <h1>Day log</h1>
   <p class="sub">Anything you want tonight\u2019s run to act on. It reads this at 10:30.</p>
@@ -528,10 +533,19 @@ function logView(){
   <button type="button" class="cta" id="jsave" onclick="saveNote()" ${logBusy?'aria-busy="true" disabled':''}>${logBusy||'Add to today'}</button>
   <div aria-live="polite">${logMsg?`<p class="sub" style="margin-top:12px">${esc(logMsg)}</p>`:''}</div>
   ${queued().length?`<p class="sub" style="color:var(--warn)">${queued().length} ${queued().length===1?'entry is':'entries are'} still on this phone, waiting for the server.</p>`:''}
-  <h2>Today, ${n.length} ${n.length===1?'entry':'entries'}</h2>
-  <div class="list">${n.length?n.map(x=>`<div class="entry"><div class="tm">${esc(x.when)}</div>${esc(x.text)}</div>`).join(''):'<p class="empty">Nothing yet today.</p>'}</div>
-  <button type="button" class="cta ghost" onclick="processNow()">Send it to Claude now</button>
-  <p class="sub">Otherwise it goes at 10:30 with everything else.</p>
+
+  ${waiting.length?`<h2>Waiting, ${waiting.length} ${waiting.length===1?'entry':'entries'}</h2><div class="list">${rows(waiting)}</div>`:''}
+  ${!n.length?'<h2>Today</h2><div class="list"><p class="empty">Nothing yet today.</p></div>':''}
+
+  <button type="button" class="cta ghost" id="jsend" onclick="processNow()"
+    ${sending||!waiting.length?'disabled':''} ${sending?'aria-busy="true"':''}>${sending?'Sending\u2026':'Send it to Claude now'}</button>
+  <!-- The confirmation lives directly under the button. It used to render near the textarea,
+       which on a phone is off the top of the screen from here, so a tap looked like nothing. -->
+  <div aria-live="polite">${sendMsg?`<p class="sub" style="margin-top:10px">${esc(sendMsg)}</p>`:''}</div>
+  <p class="sub">${waiting.length?'Otherwise it goes at 10:30 with everything else.':'Nothing waiting. Anything you add now goes at 10:30.'}</p>
+
+  ${sent.length?`<h2>Handed over, ${sent.length}</h2><div class="list">${sent.map(x=>
+    `<div class="entry sent"><div class="tm"><span class="tick" aria-hidden="true">\u2713</span>Sent ${esc(x.sent)}</div>${esc(x.text)}</div>`).join('')}</div>`:''}
   </div>`}
 /* Notes are written on the move, so a note must survive no signal. Anything that fails to
    reach the server is kept here and flushed on the next successful connection. */
@@ -554,28 +568,40 @@ async function saveNote(){
   const t=(($('#jt')&&$('#jt').value)||logDraft).trim();
   if(!t){logMsg='Nothing to add yet.';render();return}
   if(logBusy)return;
-  logBusy='Saving\u2026';render();
+  sendMsg='';logBusy='Saving\u2026';render();
   if(live){
     try{
       const n=await api('/notes',{method:'POST',body:JSON.stringify({text:t})}).then(r=>r.json());
-      (DATA.notes=DATA.notes||[]).push({when:localTime(n.at),text:n.text});
+      (DATA.notes=DATA.notes||[]).push({when:localTime(n.at),text:n.text,sent:''});
       logDraft='';logMsg='Added.';
     }catch(e){
       queueNote(t);logDraft='';
       logMsg='Saved on this phone. It goes up the next time the server answers.';
-      (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t});
+      (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t,sent:''});
     }
   }else{
-    (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t});
+    (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t,sent:''});
     logDraft='';logMsg='Added to the sample log. Connect a server to keep it.';
   }
   logBusy='';render();
 }
 async function processNow(){
-  if(!live){logMsg='Connect a server first, then this hands the day over.';render();return}
-  try{await api('/notes/process-now',{method:'POST',body:'{}'});logMsg='Handed over. The next run picks it up.';}
-  catch(e){logMsg='Could not ask for it: '+String(e.message||e)}
-  render();
+  if(sending)return;
+  if(!live){sendMsg='Connect a server first, then this hands the day over.';render();return}
+  sending=true;sendMsg='';render();
+  try{
+    const r=await api('/notes/process-now',{method:'POST',body:'{}'}).then(r=>r.json());
+    /* Re-read rather than guessing: the server decides which entries were still waiting. */
+    try{
+      const N=await api('/notes/today').then(r=>r.json());
+      DATA.notes=N.map(x=>({when:localTime(x.at),text:x.text,sent:x.sent_at?localTime(x.sent_at):''}));
+    }catch(e){(DATA.notes||[]).forEach(x=>{if(!x.sent)x.sent=localTime(new Date().toISOString())})}
+    const k=r.sent||0;
+    /* A tick means handed over, not done. Nothing polls the flag; the run is at 10:30. */
+    sendMsg=k?`Sent ${k} ${k===1?'entry':'entries'}. Tonight\u2019s 10:30 run acts on it.`
+             :'Everything was already handed over.';
+  }catch(e){sendMsg='Could not hand it over: '+String(e.message||e)}
+  sending=false;render();
 }
 const localTime=iso=>{try{return new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(iso))}catch(e){return iso}};
 

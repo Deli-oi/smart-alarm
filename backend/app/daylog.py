@@ -30,7 +30,9 @@ def day_log_markdown(day: str, notes: list[Note], tasks: list[Task], tz: str = "
         out.append("")
         for n in notes:
             label = "replied" if n.kind == "reply" else "note"
-            out.append(f"- **{_local_time(n.at, tz)}** ({label}) {n.text}")
+            # A tick means he handed it over early; the rest arrive with the 10:30 run.
+            mark = "handed over" if n.sent_at else "waiting"
+            out.append(f"- **{_local_time(n.at, tz)}** ({label}, {mark}) {n.text}")
         out.append("")
     else:
         out += ["## What he said", "", "Nothing recorded today.", ""]
