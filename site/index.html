@@ -1,179 +1,409 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f0e3">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:,">
 <title>Wake-Up</title>
 <style>
-:root{--paper:#f6f0e3;--card:#fbf7ee;--ink:#1d1a16;--mute:#8a8070;--rule:#ddd2bc;--oxblood:#6b1d2a;--gold:#9a7b3c;--navy:#1f2a44;--ok:#2f5d3a}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#e9e1cf;color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
-#app{max-width:460px;min-height:100vh;margin:0 auto;background:var(--paper);position:relative;overflow:hidden}
+:root{
+  --paper:#f6f0e3;--card:#fbf7ee;--ink:#1d1a16;--mute:#746a5a;--rule:#d9cdb6;
+  --oxblood:#6b1d2a;--brass:#8a6b2c;--ok:#2a5436;--warn:#8a5a12;
+  --press:#efe5cf;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;-webkit-text-size-adjust:100%}
+@media(pointer:fine){html{overscroll-behavior:none}}
+html,body{margin:0;background:#e9e1cf;color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  touch-action:manipulation}
+#app{max-width:460px;min-height:100svh;margin:0 auto;background:var(--paper)}
 @media(min-width:520px){#app{margin:24px auto;min-height:840px;border:1px solid var(--rule);box-shadow:0 18px 50px rgba(60,40,10,.12)}}
-.bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 4px;color:var(--oxblood);font-size:17px;min-height:48px}
-.bar button{background:none;border:0;color:var(--oxblood);font:inherit;padding:6px 0;cursor:pointer}
-.wrap{padding:0 22px 90px}
-h1{font-size:36px;font-weight:600;letter-spacing:.2px;margin:6px 0 2px}
-h2{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:28px 0 8px}
-.sub{color:var(--mute);font-style:italic;font-size:16px;margin:0 0 14px}
+
+/* one focus treatment for everything that takes focus */
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:4px}
+
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 2px;min-height:52px}
+.bar button{min-height:44px;display:inline-flex;align-items:center;gap:6px;
+  background:none;border:0;color:var(--oxblood);font:inherit;font-size:17px;padding:6px 8px;cursor:pointer}
+.bar button:hover{color:var(--ink)}
+.bar button:active{opacity:.6}
+.bar .state{color:var(--mute);font-size:15px;font-style:italic}
+.wrap{padding:0 22px calc(32px + env(safe-area-inset-bottom))}
+
+h1{font-size:34px;font-weight:600;letter-spacing:.2px;margin:4px 0 2px;text-wrap:balance}
+h2{font-size:17px;font-weight:600;font-style:italic;color:var(--ink);margin:30px 0 8px;
+  padding-bottom:6px;border-bottom:1px solid var(--rule)}
+h3{font-size:23px;margin:26px 0 6px;font-weight:600;text-wrap:balance}
+.sub{color:var(--mute);font-style:italic;font-size:16px;margin:0 0 14px;line-height:1.45}
+
 .list{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
-.row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:13px 16px;font:inherit;color:inherit;cursor:pointer}
+.row{display:block;width:100%;min-height:52px;text-align:left;background:none;border:0;
+  border-bottom:1px solid var(--rule);padding:13px 16px;font:inherit;color:inherit;cursor:pointer}
 .row:last-child{border-bottom:0}
-.row .t{font-weight:600;font-size:18px;display:flex;justify-content:space-between;gap:10px}
-.row .t small{font-weight:400;color:var(--mute);font-size:14px;white-space:nowrap}
-.row .p{color:var(--mute);font-size:15px;margin-top:2px;line-height:1.35}
-.lock{width:13px;height:13px;vertical-align:-1px;margin-left:6px;fill:none;stroke:var(--gold);stroke-width:1.8}
-.note p{font-size:18px;line-height:1.62;margin:0 0 14px}
-.note h3{font-size:22px;margin:26px 0 4px;font-weight:600}
-.tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
-.rule{height:1px;background:var(--rule);margin:22px 0;border:0}
-.cta{display:block;width:100%;margin-top:18px;padding:14px;border:1px solid var(--oxblood);background:var(--oxblood);color:#f6f0e3;border-radius:10px;font:inherit;font-size:17px;letter-spacing:.04em;cursor:pointer}
+.row:hover{background:#f7efdd}
+.row:active{background:var(--press)}
+.row .t{font-weight:600;font-size:18px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.row .t span{min-width:0;overflow-wrap:break-word}
+.row .t small{flex:none;font-weight:400;color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums}
+.row .p{color:var(--mute);font-size:15px;margin-top:3px;line-height:1.4;overflow-wrap:break-word}
+.static{cursor:default}
+.static:hover,.static:active{background:none}
+
+.lock{width:13px;height:13px;vertical-align:-1px;margin-left:6px;fill:none;stroke:var(--brass);stroke-width:1.8}
+.note p{font-size:18px;line-height:1.62;margin:0 0 14px;max-width:64ch}
+.kind{font-size:15px;color:var(--mute);font-style:italic;margin:0 0 10px}
+.rule{height:1px;background:var(--rule);margin:24px 0;border:0}
+
+.cta{display:block;width:100%;min-height:48px;margin-top:14px;padding:13px 16px;
+  border:1px solid var(--oxblood);background:var(--oxblood);color:#f8f3e6;border-radius:10px;
+  font:inherit;font-size:17px;cursor:pointer;transition:background-color .15s ease,color .15s ease}
+.cta:hover{background:#56141f}
+.cta:active{background:#43101a}
 .cta.ghost{background:none;color:var(--oxblood)}
-.cta[disabled]{opacity:.35;cursor:default}
-.prog{height:3px;background:var(--rule);margin:10px 0 0}
-.prog i{display:block;height:100%;width:0;background:var(--gold)}
-.q{font-size:21px;line-height:1.4;margin:10px 0 16px}
-.opt{display:block;width:100%;text-align:left;padding:13px 16px;margin:0 0 10px;background:var(--card);border:1px solid var(--rule);border-radius:10px;font:inherit;font-size:17px;color:inherit;cursor:pointer}
-.opt.sel{border-color:var(--oxblood);background:#f3e6e2}
-.tl{position:relative;margin:0;padding:0;list-style:none}
-.tl li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.cta.ghost:hover{background:#f1e4df}
+.cta.ghost:active{background:#e9d8d2}
+.cta[disabled]{opacity:.45;cursor:default;background:var(--oxblood)}
+.cta[aria-busy=true]{cursor:progress}
+
+.prog{height:3px;background:var(--rule);margin:12px 0 0}
+.prog i{display:block;height:100%;width:0;background:var(--brass)}
+@media(prefers-reduced-motion:no-preference){.prog i{transition:width .3s linear}}
+
+.q{font-size:21px;line-height:1.4;margin:10px 0 16px;text-wrap:pretty}
+.opt{display:block;width:100%;min-height:48px;text-align:left;padding:13px 16px;margin:0 0 10px;
+  background:var(--card);border:1px solid var(--rule);border-radius:10px;font:inherit;font-size:17px;
+  color:inherit;cursor:pointer}
+.opt:hover{border-color:var(--brass)}
+.opt:active{background:var(--press)}
+.opt[aria-pressed=true]{border-color:var(--oxblood);border-width:2px;background:#f3e6e2;font-weight:600}
+
+.tl{margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
 .tl li:last-child{border-bottom:0}
-.tl .tm{color:var(--mute);font-size:15px;font-variant-numeric:oldstyle-nums}
-.tl .ti{font-size:18px;font-weight:600}
-.tl .no{font-size:14px;color:var(--mute);font-style:italic}
-.tl .hold .ti{color:var(--gold)}
+.tl .tm{color:var(--mute);font-size:15px;font-variant-numeric:tabular-nums}
+.tl .ti{font-size:18px;font-weight:600;overflow-wrap:break-word}
+.tl .no{font-size:15px;color:var(--mute);font-style:italic;margin-top:2px}
+.tl .hold .ti{color:var(--brass)}
 .tl .clash .ti{color:var(--oxblood)}
-.chk{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+
+.chk{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:13px 16px;border-bottom:1px solid var(--rule)}
 .chk:last-child{border-bottom:0}
-.chk .c{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--gold);margin-top:3px}
+.chk .c{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--brass);margin-top:4px}
 .chk.done .c{background:var(--ok);border-color:var(--ok)}
 .chk.done .tx{color:var(--mute);text-decoration:line-through}
-.chk .src{font-size:13px;color:var(--mute);font-style:italic}
-.foot{position:absolute;bottom:0;left:0;right:0;padding:14px;text-align:center;color:var(--mute);font-size:13px;letter-spacing:.12em;text-transform:uppercase;background:linear-gradient(transparent,var(--paper) 45%)}
-.badge{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--gold);color:var(--gold);padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:3px}
-.big{font-size:54px;text-align:center;margin:30px 0 4px;font-weight:600;color:var(--oxblood)}
+.chk .src{font-size:14px;color:var(--mute);font-style:italic;margin-top:2px}
+
+.badge{display:inline-block;font-size:13px;border:1px solid var(--oxblood);color:var(--oxblood);
+  padding:1px 8px;border-radius:20px;margin-left:8px;vertical-align:2px;font-style:italic}
+.big{font-size:54px;text-align:center;margin:30px 0 4px;font-weight:600;color:var(--oxblood);
+  font-variant-numeric:tabular-nums}
 .center{text-align:center}
+.empty{padding:20px 16px;color:var(--mute);font-style:italic;font-size:16px;text-align:center}
+
+/* ---- forms ---- */
+.field{padding:14px 16px;border-bottom:1px solid var(--rule)}
+.field:last-child{border-bottom:0}
+.field label{display:block;font-size:15px;font-weight:600;margin-bottom:6px}
+.field .hint{font-size:14px;color:var(--mute);font-style:italic;margin-top:7px;line-height:1.4}
+.field input{width:100%;min-height:44px;font:inherit;font-size:17px;color:var(--ink);
+  background:#fffdf7;border:1px solid var(--rule);border-radius:8px;padding:10px 12px}
+.field input::placeholder{color:#a79a85}
+.field input:focus{border-color:var(--brass)}
+.inrow{display:flex;gap:8px;align-items:stretch}
+.inrow input{flex:1;min-width:0}
+.inrow button{flex:none;min-width:72px;min-height:44px;font:inherit;font-size:16px;
+  background:none;border:1px solid var(--rule);border-radius:8px;color:var(--oxblood);cursor:pointer}
+.inrow button:hover{border-color:var(--brass)}
+.inrow button[aria-pressed=true]{background:var(--press)}
+.err{color:var(--oxblood);font-size:16px;line-height:1.45;margin:10px 0 0}
+.pair{display:flex;gap:10px}
+.pair .cta{flex:1;min-width:0;font-size:16px}
+
+.checks{margin:16px 0 0;padding:0;list-style:none;background:var(--card);
+  border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.checks li{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:12px 16px;
+  border-bottom:1px solid var(--rule);font-size:16px;line-height:1.4}
+.checks li:last-child{border-bottom:0}
+.checks .m{font-weight:700;line-height:1.3}
+.checks .ok .m{color:var(--ok)}
+.checks .warn .m{color:var(--warn)}
+.checks .bad .m{color:var(--oxblood)}
+.checks .d{color:var(--mute);font-size:14px;font-style:italic;margin-top:2px}
 </style></head><body><div id="app"></div>
 <script>
-const DATA={"readings": {"cite": "Daniel 7 \u00b7 Luke 21", "gist": "Sample placeholder. The real app fetches the day's Mass readings at 6:00 and shows a short summary here, with the full citation."}, "flag": null, "articles": [{"tag": "Missed news \u00b7 sample copy", "title": "Why central banks watch the job market", "body": ["A central bank cares about jobs because wages feed into prices. When hiring is strong and workers are scarce, employers pay more, and that tends to push inflation up.", "So a surprisingly strong jobs report can move interest rate expectations even when nothing else has changed."]}, {"tag": "Research \u00b7 Mind \u00b7 sample copy", "title": "Retrieval practice beats rereading", "body": ["In a well-known 2006 study, Roediger and Karpicke had students read a passage and then either reread it or take a recall test on it.", "A week later, the students who had been tested remembered more than the students who had reread. Pulling a fact out of memory strengthens it more than seeing it again.", "This is the idea behind the morning recall gate."]}, {"tag": "Wildcard \u00b7 sample copy", "title": "The Antikythera mechanism", "body": ["Divers found this corroded bronze device in a shipwreck off the Greek island of Antikythera in 1901.", "It dates to roughly the second or first century BC. It used a train of gears to model the motions of the sun and moon and to predict eclipses.", "Nothing of comparable complexity appears in the record for well over a thousand years afterwards."]}], "quiz": [{"q": "What did central banks watch because wages feed into prices?", "o": ["The job market", "Rainfall", "Stock splits", "Shipping rates"], "a": 0}, {"q": "Strong hiring tends to push inflation which way?", "o": ["Down", "Up", "No effect", "Only on weekends"], "a": 1}, {"q": "In the 2006 study, what did one group do after reading?", "o": ["Took a recall test", "Slept", "Highlighted", "Left the room"], "a": 0}, {"q": "A week later, who remembered more?", "o": ["The rereaders", "The tested group", "Both the same", "Neither"], "a": 1}, {"q": "Why does retrieval practice work?", "o": ["It is quicker", "Pulling a fact from memory strengthens it", "It is more fun", "It avoids notes"], "a": 1}, {"q": "Where was the Antikythera mechanism found?", "o": ["A Greek shipwreck", "An Egyptian tomb", "A Roman villa", "A Turkish library"], "a": 0}, {"q": "What did it predict?", "o": ["Harvests", "Eclipses", "Wars", "Tides only"], "a": 1}, {"q": "When was it found?", "o": ["1801", "1901", "1951", "2001"], "a": 1}], "audio": "https://platform.r2.fish.audio/tasks/2026-11-27/23f0e03461004d938d91794d86df386e.mp3", "date": "Friday, 27 November", "name": "Eli", "mode": "Sample content", "badge": "Preview", "events": [{"start": "08:00", "end": "09:30", "title": "Morning block", "note": "Deep work"}, {"start": "10:00", "end": "11:50", "title": "Lecture", "note": ""}, {"start": "12:00", "end": "13:30", "title": "Lunch with a friend", "note": ""}, {"start": "14:00", "end": "15:50", "title": "Study session", "note": "Library"}, {"start": "17:00", "end": "18:00", "title": "Gym", "note": ""}], "mail": [{"from": "A recruiter", "subject": "Interview scheduling", "why": "Needs a reply"}, {"from": "A club", "subject": "Annual meeting Tuesday", "why": ""}, {"from": "A friend", "subject": "Weekend plans", "why": ""}], "files": [{"title": "Applications tracker", "kind": "Spreadsheet", "when": "Mon"}, {"title": "Project notes", "kind": "Document", "when": "Sat"}, {"title": "Meeting summary", "kind": "Markdown", "when": "Fri"}], "evening": [{"t": "Ship the preview", "done": true, "src": "Detected: commit in your repository"}, {"t": "Reply to the recruiter", "done": false, "src": "No sent mail found"}, {"t": "Read the chapter", "done": true, "src": "Detected: Claude chat on the topic"}]};
+const DATA={"readings": {"cite": "Daniel 7 and Luke 21", "gist": "Sample placeholder. The real app fetches the day's Mass readings at 6:00 and shows a short summary here, with the full citation."}, "flag": null, "articles": [{"tag": "Missed news, sample copy", "title": "Why central banks watch the job market", "body": ["A central bank cares about jobs because wages feed into prices. When hiring is strong and workers are scarce, employers pay more, and that tends to push inflation up.", "So a surprisingly strong jobs report can move interest rate expectations even when nothing else has changed."]}, {"tag": "Research in today\u2019s field, sample copy", "title": "Retrieval practice beats rereading", "body": ["In a well-known 2006 study, Roediger and Karpicke had students read a passage and then either reread it or take a recall test on it.", "A week later, the students who had been tested remembered more than the students who had reread. Pulling a fact out of memory strengthens it more than seeing it again.", "This is the idea behind the morning recall gate."]}, {"tag": "Wildcard, sample copy", "title": "The Antikythera mechanism", "body": ["Divers found this corroded bronze device in a shipwreck off the Greek island of Antikythera in 1901.", "It dates to roughly the second or first century BC. It used a train of gears to model the motions of the sun and moon and to predict eclipses.", "Nothing of comparable complexity appears in the record for well over a thousand years afterwards."]}], "quiz": [{"q": "What did central banks watch because wages feed into prices?", "o": ["The job market", "Rainfall", "Stock splits", "Shipping rates"], "a": 0}, {"q": "Strong hiring tends to push inflation which way?", "o": ["Down", "Up", "No effect", "Only on weekends"], "a": 1}, {"q": "In the 2006 study, what did one group do after reading?", "o": ["Took a recall test", "Slept", "Highlighted", "Left the room"], "a": 0}, {"q": "A week later, who remembered more?", "o": ["The rereaders", "The tested group", "Both the same", "Neither"], "a": 1}, {"q": "Why does retrieval practice work?", "o": ["It is quicker", "Pulling a fact from memory strengthens it", "It is more fun", "It avoids notes"], "a": 1}, {"q": "Where was the Antikythera mechanism found?", "o": ["A Greek shipwreck", "An Egyptian tomb", "A Roman villa", "A Turkish library"], "a": 0}, {"q": "What did it predict?", "o": ["Harvests", "Eclipses", "Wars", "Tides only"], "a": 1}, {"q": "When was it found?", "o": ["1801", "1901", "1951", "2001"], "a": 1}], "audio": "https://platform.r2.fish.audio/tasks/2026-11-27/23f0e03461004d938d91794d86df386e.mp3", "date": "Friday, 27 November", "name": "Eli", "mode": "Sample content", "badge": "Preview", "events": [{"start": "08:00", "end": "09:30", "title": "Morning block", "note": "Deep work"}, {"start": "10:00", "end": "11:50", "title": "Lecture", "note": ""}, {"start": "12:00", "end": "13:30", "title": "Lunch with a friend", "note": ""}, {"start": "14:00", "end": "15:50", "title": "Study session", "note": "Library"}, {"start": "17:00", "end": "18:00", "title": "Gym", "note": ""}], "mail": [{"from": "A recruiter", "subject": "Interview scheduling", "why": "Needs a reply"}, {"from": "A club", "subject": "Annual meeting Tuesday", "why": ""}, {"from": "A friend", "subject": "Weekend plans", "why": ""}], "files": [{"title": "Applications tracker", "kind": "Spreadsheet", "when": "Mon"}, {"title": "Project notes", "kind": "Document", "when": "Sat"}, {"title": "Meeting summary", "kind": "Markdown", "when": "Fri"}], "evening": [{"t": "Ship the preview", "done": true, "src": "Detected: commit in your repository"}, {"t": "Reply to the recruiter", "done": false, "src": "No sent mail found"}, {"t": "Read the chapter", "done": true, "src": "Detected: Claude chat on the topic"}]};
 const $=s=>document.querySelector(s);
 const MOCK=JSON.parse(JSON.stringify(DATA));
-let live=false,liveErr='',result=null;
-const CFG=()=>{try{return JSON.parse(localStorage.getItem('wk')||'{}')}catch(e){return{}}};
-async function api(path,opt){const c=CFG();const r=await fetch(c.url.replace(/\/$/,'')+path,Object.assign({},opt,{headers:{Authorization:'Bearer '+c.token,'Content-Type':'application/json'}}));if(!r.ok)throw new Error(path+' '+r.status);return r}
-const KIND={missed_news:'Missed news',research:'Research',wildcard:'Wildcard'};
-async function loadLive(){
-  const c=CFG();if(!c.url||!c.token){live=false;Object.assign(DATA,MOCK);return}
-  try{
-    const [iss,quiz,day,tasks]=await Promise.all([api('/issue/today').then(r=>r.json()),api('/quiz/today').then(r=>r.json()),api('/day').then(r=>r.json()),api('/tasks/today').then(r=>r.json())]);
-    Object.assign(DATA,MOCK,{
-      date:new Date(iss.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long'}),
-      readings:{cite:iss.readings.map(r=>r.reference).join(' · '),gist:iss.reflection||iss.readings.map(r=>r.text).join(' ')},
-      flag:iss.critical&&iss.critical.length?iss.critical.join(' '):null,
-      articles:iss.articles.map(a=>({tag:KIND[a.kind]||a.kind,title:a.title,body:a.body.split(/\n\s*\n/)})),
-      quiz:quiz.map(q=>({id:q.id,q:q.prompt,o:q.choices})),
-      events:day.events.filter(e=>!e.all_day).map(e=>({start:e.start,end:e.end,title:e.title,note:e.location})),
-      mail:day.mail.map(m=>({from:m.sender,subject:m.subject,why:''})),
-      files:[],evening:tasks.map(t=>({t:t.title,done:t.status==='done',src:t.source?'Detected: '+t.source:'Not detected yet'})),
-      mode:'Live · connected',badge:'Live',errors:day.errors});
-    live=true;liveErr=''
-  }catch(e){live=false;liveErr=String(e.message||e);Object.assign(DATA,MOCK)}
-}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let live=false,liveErr='',result=null,checks=[],busy='';
 let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,timer=null;
-const LOCK='<svg class="lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+const CFG=()=>{try{return JSON.parse(localStorage.getItem('wk')||'{}')}catch(e){return{}}};
+let draft=null;
+const getDraft=()=>{if(!draft){const c=CFG();draft={url:c.url||'',token:c.token||'',show:false}}return draft};
+
+/* A server address typed on a phone arrives without a scheme and often with a trailing slash.
+   Anything but a local address gets https, so a typed hostname is never sent in the clear. */
+const LOCAL=/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$|\.(local|test)(:\d+)?$/i;
+function normalizeUrl(raw){
+  let u=String(raw||'').trim().replace(/\s/g,'');
+  if(!u)return '';
+  if(!/^https?:\/\//i.test(u)){
+    u=u.replace(/^\/+/,'');
+    u=(LOCAL.test(u.split('/')[0])?'http://':'https://')+u;
+  }
+  return u.replace(/\/+$/,'');
+}
+function host(u){try{return new URL(u).host}catch(e){return u}}
+
+async function api(path,opt,ms){
+  const c=CFG();
+  if(!c.url)throw new Error('No server address saved yet.');
+  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),ms||12000);
+  try{
+    const r=await fetch(c.url+path,Object.assign({},opt,{signal:ac.signal,
+      headers:{Authorization:'Bearer '+(c.token||''),'Content-Type':'application/json'}}));
+    if(!r.ok){const e=new Error(path+' returned '+r.status);e.status=r.status;throw e}
+    return r;
+  }catch(e){
+    if(e.name==='AbortError'){const x=new Error('timed out after '+Math.round((ms||12000)/1000)+' seconds');x.timeout=true;throw x}
+    throw e;
+  }finally{clearTimeout(t)}
+}
+
+const KIND={missed_news:'Missed news',research:'Research in today’s field',wildcard:'Wildcard'};
+const fmtDate=iso=>{try{return new Intl.DateTimeFormat(undefined,{weekday:'long',day:'numeric',month:'long'}).format(new Date(iso+'T12:00:00'))}catch(e){return iso}};
+
+/* Each endpoint is checked on its own, so one gap never hides the rest. */
+async function loadLive(){
+  const c=CFG();checks=[];
+  if(!c.url||!c.token){live=false;liveErr='';Object.assign(DATA,MOCK);return}
+  let reachable=false;
+  try{
+    const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
+    const r=await fetch(c.url+'/health',{signal:ac.signal});clearTimeout(t);
+    reachable=r.ok;
+    checks.push(r.ok?{k:'ok',n:'Server answers',d:host(c.url)}
+      :{k:'bad',n:'Server answered '+r.status,d:'Check the address in Railway, then save again.'});
+  }catch(e){
+    checks.push({k:'bad',n:'Cannot reach the server',
+      d:e.name==='AbortError'?'No answer within 8 seconds. Check the address.'
+        :'Check the address, and that it starts with https.'});
+  }
+  const got=await Promise.allSettled([api('/issue/today'),api('/quiz/today'),api('/day'),api('/tasks/today')]);
+  const [iss,quiz,day,tasks]=got;
+  const name=['Today’s issue','Recall questions','Day plan','Tasks'];
+  const unauthorized=got.some(g=>g.status==='rejected'&&g.reason&&g.reason.status===401);
+  if(reachable)checks.push(unauthorized
+    ?{k:'bad',n:'Token refused',d:'Copy API_TOKEN from your Railway variables exactly, with no spaces.'}
+    :{k:'ok',n:'Token accepted',d:''});
+  got.forEach((g,i)=>{
+    if(g.status==='fulfilled'){checks.push({k:'ok',n:name[i],d:''});return}
+    const s=g.reason&&g.reason.status;
+    if(s===404)checks.push({k:'warn',n:name[i]+' not written yet',
+      d:'The 5:37 am task writes it. Nothing is wrong with the server.'});
+    else if(s===401)checks.push({k:'bad',n:name[i],d:'Token refused.'});
+    else checks.push({k:'bad',n:name[i],d:String(g.reason&&g.reason.message||g.reason)});
+  });
+
+  const d={};let any=false,miss=[];
+  if(iss.status==='fulfilled'&&quiz.status==='fulfilled'){
+    const I=await iss.value.json(),Q=await quiz.value.json();
+    Object.assign(d,{
+      date:fmtDate(I.date),
+      readings:{cite:I.readings.map(r=>r.reference).join(' and '),
+                gist:I.reflection||I.readings.map(r=>r.text).join(' ')},
+      flag:I.critical&&I.critical.length?I.critical.join(' '):null,
+      articles:I.articles.map(a=>({tag:KIND[a.kind]||a.kind,title:a.title,body:a.body.split(/\n\s*\n/)})),
+      quiz:Q.map(q=>({id:q.id,q:q.prompt,o:q.choices}))});
+    any=true;
+  }else miss.push('the issue and recall questions');
+  if(day.status==='fulfilled'){
+    const D=await day.value.json();
+    Object.assign(d,{events:(D.events||[]).filter(e=>!e.all_day).map(e=>({start:e.start,end:e.end,title:e.title,note:e.location||''})),
+      mail:(D.mail||[]).map(m=>({from:m.sender,subject:m.subject,why:''})),
+      notes:D.notes||'',errors:D.errors||[]});
+    any=true;
+  }else miss.push('the day plan');
+  if(tasks.status==='fulfilled'){
+    const T=await tasks.value.json();
+    d.evening=T.map(t=>({t:t.title,done:t.status==='done',
+      src:t.status==='done'?('Detected: '+(t.source||'marked done')):(t.note||'Not detected yet')}));
+    any=true;
+  }else miss.push('tasks');
+
+  live=any;
+  liveErr=any?(miss.length?'Sample content is standing in for '+miss.join(', ')+'.':''):'Nothing could be loaded from the server.';
+  Object.assign(DATA,MOCK,d,{mode:any?(miss.length?'Partly live':'Live'):'Sample',files:d.files||[]});
+}
+
+const LOCK='<svg class="lock" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
 function go(v){view=v;sel=null;render();window.scrollTo(0,0)}
-function bar(back){return `<div class="bar"><button onclick="go('${back||'home'}')">${back===null?'':'‹ '+(back==='home'||!back?'Notes':'Back')}</button><span></span></div>`}
-function fmt(t){const[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+' '+ap}
+function bar(back,trailing){
+  const b=back===null?'<span></span>'
+    :`<button type="button" onclick="go('${back||'home'}')">‹ ${back&&back!=='home'?'Back':'Notes'}</button>`;
+  return `<div class="bar">${b}${trailing||'<span></span>'}</div>`;
+}
+function fmt(t){const[h,m]=String(t).split(':').map(Number);const ap=h>=12?'pm':'am';return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+' '+ap}
 function dayItems(){
   const items=[{s:'07:00',e:'07:15',t:'Wake-up issue',n:'Readings, three articles, recall',k:''},
   {s:'07:35',e:'08:00',t:'Breakfast, coffee, walk',n:'Protected',k:'hold'}];
-  DATA.events.forEach(e=>items.push({s:e.start,e:e.end,t:e.title,n:e.note||'',k:''}));
+  (DATA.events||[]).forEach(e=>items.push({s:e.start,e:e.end,t:e.title,n:e.note||'',k:''}));
   items.sort((a,b)=>a.s.localeCompare(b.s));
   items.forEach((a,i)=>{items.forEach((b,j)=>{if(i!==j&&a.k!=='hold'&&b.k!=='hold'&&a.s<b.e&&b.s<a.e&&a.t!=='Wake-up issue'&&b.t!=='Wake-up issue')a.k='clash'})});
   return items}
 function rundown(){
-  const ev=DATA.events,c=dayItems().filter(x=>x.k==='clash');
+  const ev=DATA.events||[],c=dayItems().filter(x=>x.k==='clash');
   let s=`Good morning ${DATA.name}. It is ${DATA.date}. `;
-  s+=ev.length?`You have ${ev.length} things on the calendar, starting with ${ev[0].title} at ${fmt(ev[0].start)}. `:'Your calendar is clear. ';
+  s+=ev.length?`You have ${ev.length} ${ev.length===1?'thing':'things'} on the calendar, starting with ${ev[0].title} at ${fmt(ev[0].start)}. `:'Your calendar is clear. ';
   if(c.length)s+=`Heads up, ${c[0].title} overlaps with another event. `;
-  s+=DATA.mail[0]?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
+  s+=(DATA.mail&&DATA.mail[0])?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
   s+='Your breakfast block is protected from seven thirty five. That is everything.';return s}
 let aud=null;
 async function speak(){
   try{if(aud){aud.pause();aud=null}}catch(e){}
   try{
-    if(live){const b=await api('/jarvis/speak').then(r=>r.blob());aud=new Audio(URL.createObjectURL(b));await aud.play();return}
+    if(live){const b=await api('/jarvis/speak',null,25000).then(r=>r.blob());aud=new Audio(URL.createObjectURL(b));await aud.play();return}
     if(DATA.audio){aud=new Audio(DATA.audio);await aud.play();return}
   }catch(e){}
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(rundown());u.rate=.98;speechSynthesis.speak(u)}catch(e){}}
+
 function home(){
-  const left=DATA.evening.filter(x=>!x.done).length;
-  return `<div class="bar"><span>Folders</span><button onclick="go('settings')" style="color:var(--mute);font-size:14px">${live?'Live':'Mock'} · Settings</button></div><div class="wrap">
+  const ev=DATA.events||[],mail=DATA.mail||[],files=DATA.files||[],evening=DATA.evening||[];
+  const left=evening.filter(x=>!x.done).length;
+  const trailing=`<button type="button" onclick="go('settings')" aria-label="Settings. Content is ${esc(DATA.mode||'Sample')}."><span class="state">${esc(DATA.mode||'Sample')}</span>&nbsp;Settings</button>`;
+  return `<div class="bar"><span style="padding-left:8px">Folders</span>${trailing}</div><div class="wrap">
   <h1>Wake-Up</h1><p class="sub">${esc(DATA.date)}</p>
+  ${liveErr?`<p class="sub" style="color:var(--warn)">${esc(liveErr)}</p>`:''}
   <h2>Pinned</h2><div class="list">
-  <button class="row" onclick="go('issue')"><div class="t">Morning Issue<small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)} · 3 articles · 15 minutes</div></button>
-  <button class="row" onclick="go('recall')"><div class="t">Recall<small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions · 70% to open the day · two tries</div></button>
-  <button class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?DATA.events.length+' events · breakfast block protected':'Locked until recall is passed'}</div></button>
-  <button class="row" onclick="go('evening')"><div class="t">Evening Check<small>10:30 pm</small></div><div class="p">${left} left over · done detected from your sources</div></button>
-  <button class="row" onclick="go('jarvis')"><div class="t">Jarvis<small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
+  <button type="button" class="row" onclick="go('issue')"><div class="t"><span>Morning Issue</span><small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)}, three articles, fifteen minutes</div></button>
+  <button type="button" class="row" onclick="go('recall')"><div class="t"><span>Recall</span><small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions, two tries, 70% opens the day</div></button>
+  <button type="button" class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?(ev.length?ev.length+' events, breakfast block protected':'Calendar clear, breakfast block protected'):'Locked until recall is passed'}</div></button>
+  <button type="button" class="row" onclick="go('evening')"><div class="t"><span>Evening Check</span><small>10:30 pm</small></div><div class="p">${left} left over, done detected from your sources</div></button>
+  <button type="button" class="row" onclick="go('jarvis')"><div class="t"><span>Jarvis</span><small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
   <h2>Sources</h2><div class="list">
-  <button class="row" onclick="go('mail')"><div class="t">Mail<small>${DATA.mail.length}</small></div><div class="p">${esc(DATA.mail[0]?DATA.mail[0].subject:'Nothing new')}</div></button>
-  <button class="row" onclick="go('files')"><div class="t">Files<small>${DATA.files.length}</small></div><div class="p">${esc(DATA.files[0]?DATA.files[0].title:'Nothing recent')}</div></button></div>
-  </div><div class="foot">${DATA.mode||'Mock'}</div>`}
+  <button type="button" class="row" onclick="go('mail')"><div class="t"><span>Mail</span><small>${mail.length}</small></div><div class="p">${esc(mail[0]?mail[0].subject:'Nothing new')}</div></button>
+  <button type="button" class="row" onclick="go('files')"><div class="t"><span>Files</span><small>${files.length}</small></div><div class="p">${esc(files[0]?files[0].title:'Nothing recent')}</div></button></div>
+  </div>`}
 function issue(){
-  const a=DATA.articles.map((x,i)=>`<h3>${esc(x.title)}</h3><div class="tag">${esc(x.tag)}</div>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
-  return bar()+`<div class="wrap note"><div class="tag">Morning Issue</div><h1 style="font-size:32px">${esc(DATA.date)}</h1>
-  <div class="prog"><i id="pg"></i></div><p class="no" style="color:var(--mute);font-size:14px;font-style:italic;margin:6px 0 0">Reading time runs at 60× in this mock</p>
+  const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
+  return bar()+`<div class="wrap note"><p class="kind">Morning issue</p><h1 style="font-size:30px">${esc(DATA.date)}</h1>
+  <div class="prog"><i id="pg"></i></div><p class="kind" style="margin-top:7px">Reading time runs at 60&times; in this preview</p>
   <h3>${esc(DATA.readings.cite)}</h3><p>${esc(DATA.readings.gist)}</p>
-  <p style="color:var(--mute);font-style:italic">${esc(DATA.flag||'No critical issues today.')}</p><hr class="rule">${a}
-  <button class="cta" id="rd" onclick="startRead()">Begin reading</button></div>`}
+  <p class="kind">${esc(DATA.flag||'No critical issues today.')}</p><hr class="rule">${a}
+  <button type="button" class="cta" id="rd" onclick="startRead()">Begin reading</button></div>`}
 function startRead(){
   const b=$('#rd');b.disabled=true;let t=0;const total=15*60;
-  clearInterval(timer);timer=setInterval(()=>{t+=60;$('#pg').style.width=Math.min(100,t/total*100)+'%';b.textContent='Reading · '+Math.max(0,15-Math.round(t/60))+' min left';
+  clearInterval(timer);timer=setInterval(()=>{t+=60;$('#pg').style.width=Math.min(100,t/total*100)+'%';
+  b.textContent='Reading, '+Math.max(0,15-Math.round(t/60))+' min left';
   if(t>=total){clearInterval(timer);readDone=true;b.disabled=false;b.textContent='Continue to recall';b.onclick=()=>go('recall')}},1000)}
 async function submitLive(){
   const body={answers:Object.fromEntries(DATA.quiz.map((q,i)=>[q.id,answers[i]]))};
-  try{result=await api('/quiz/submit',{method:'POST',body:JSON.stringify(body)}).then(r=>r.json())}catch(e){result={result:'retry',score:0}}
+  try{result=await api('/quiz/submit',{method:'POST',body:JSON.stringify(body)}).then(r=>r.json())}
+  catch(e){result={result:'retry',score:0,error:String(e.message||e)}}
   render()}
 function recall(){
-  if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button class="cta" onclick="readDone=true;go('recall')">Skip ahead (demo)</button></div>`;
-  if(live&&qi>=DATA.quiz.length){
-    if(!result){submitLive();return bar(null)+`<div class="wrap center"><p class="sub">Checking…</p></div>`}
-    const r=result;
-    if(r.result==='unlocked'){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${Math.round(r.score*100)}%</div><p class="sub">The day is open.</p><button class="cta" onclick="go('today')">Open Today</button></div>`}
-    return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${Math.round(r.score*100)}%</div><p class="sub">Seventy percent opens the day.</p>
-    ${r.result==='retry'?`<button class="cta" onclick="result=null;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p>Two attempts used.</p><button class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+  if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button type="button" class="cta" onclick="readDone=true;go('recall')">Skip ahead (preview only)</button></div>`;
+  const liveQuiz=live&&DATA.quiz.length&&DATA.quiz[0].id;
+  if(liveQuiz&&qi>=DATA.quiz.length){
+    if(!result){submitLive();return bar(null)+`<div class="wrap center"><p class="sub" aria-live="polite">Checking…</p></div>`}
+    const r=result,pct=Math.round(r.score*100);
+    if(r.result==='unlocked'){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">The day is open.</p><button type="button" class="cta" onclick="go('today')">Open Today</button></div>`}
+    return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">Seventy percent opens the day.</p>
+    ${r.error?`<p class="err">${esc(r.error)}</p>`:''}
+    ${r.result==='retry'?`<button type="button" class="cta" onclick="result=null;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
   if(qi>=DATA.quiz.length){
     const n=answers.filter((a,i)=>a===DATA.quiz[i].a).length,pct=Math.round(n/DATA.quiz.length*100),pass=pct>=70;
-    if(pass){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length} correct. The day is open.</p><button class="cta" onclick="go('today')">Open Today</button></div>`}
+    if(pass){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length} correct. The day is open.</p><button type="button" class="cta" onclick="go('today')">Open Today</button></div>`}
     return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length}. Seventy percent opens the day.</p>
-    ${tries<1?`<button class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p>Two attempts used.</p><button class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+    ${tries<1?`<button type="button" class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
   const q=DATA.quiz[qi];
-  return bar(null)+`<div class="wrap"><div class="tag">Question ${qi+1} of ${DATA.quiz.length} · attempt ${tries+1} of 2</div><p class="q">${esc(q.q)}</p>
-  ${q.o.map((o,i)=>`<button class="opt ${sel===i?'sel':''}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
-  <button class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next'}</button></div>`}
+  return bar(null)+`<div class="wrap"><p class="kind">Question ${qi+1} of ${DATA.quiz.length}, attempt ${tries+1} of 2</p><p class="q">${esc(q.q)}</p>
+  ${q.o.map((o,i)=>`<button type="button" class="opt" aria-pressed="${sel===i}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
+  <button type="button" class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next question'}</button></div>`}
 function today(){
-  if(!unlocked)return bar()+`<div class="wrap note"><h1>Today${LOCK}</h1><p class="sub">Locked until recall is passed.</p><button class="cta" onclick="go('recall')">Go to recall</button></div>`;
+  if(!unlocked)return bar()+`<div class="wrap note"><h1>Today${LOCK}</h1><p class="sub">Locked until recall is passed.</p><button type="button" class="cta" onclick="go('recall')">Go to recall</button></div>`;
   const it=dayItems();
-  return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}</p><div class="list" style="padding:2px 16px"><ul class="tl">
-  ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge" style="color:var(--oxblood);border-color:var(--oxblood)">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
-  <button class="cta ghost" onclick="speak()">Play my rundown</button></div>`}
+  return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}${DATA.notes?' — '+esc(DATA.notes):''}</p><div class="list" style="padding:2px 16px"><ul class="tl">
+  ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
+  <button type="button" class="cta ghost" onclick="speak()">Play my rundown</button></div>`}
 function evening(){
-  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">10:30 pm · done is detected, not asked</p><div class="list">
-  ${DATA.evening.map(x=>`<div class="chk ${x.done?'done':''}"><div class="c"></div><div><div class="tx">${esc(x.t)}</div><div class="src">${esc(x.src)}</div></div></div>`).join('')}</div>
-  <p class="sub" style="margin-top:14px">Leftovers roll into tomorrow's list.</p></div>`}
-function mail(){return bar()+`<div class="wrap note"><h1>Mail</h1><p class="sub">Since yesterday</p><div class="list">${DATA.mail.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.subject)}</div><div class="p">${esc(m.from)}${m.why?' · '+esc(m.why):''}</div></div>`).join('')}</div></div>`}
-function files(){return bar()+`<div class="wrap note"><h1>Files</h1><p class="sub">Recently touched</p><div class="list">${DATA.files.map(m=>`<div class="row" style="cursor:default"><div class="t">${esc(m.title)}<small>${esc(m.when)}</small></div><div class="p">${esc(m.kind)}</div></div>`).join('')}</div></div>`}
-function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p><button class="cta" onclick="speak()">Play rundown</button><button class="cta ghost" onclick="try{aud&&aud.pause();speechSynthesis.cancel()}catch(e){}">Stop</button></div>`}
-function settings(){const c=CFG();
-  return bar()+`<div class="wrap note"><h1>Settings</h1><p class="sub">${live?'Connected to your server.':'Showing mock content.'}</p>
-  ${liveErr?`<p style="color:var(--oxblood)">Could not connect: ${esc(liveErr)}</p>`:''}
-  <h2>Server</h2><div class="list" style="padding:12px 16px">
-  <input id="su" placeholder="https://your-server.example.com" value="${esc(c.url||'')}" style="width:100%;font:inherit;font-size:16px;border:0;border-bottom:1px solid var(--rule);background:none;padding:8px 0;margin-bottom:12px">
-  <input id="st" type="password" placeholder="API token" value="${esc(c.token||'')}" style="width:100%;font:inherit;font-size:16px;border:0;border-bottom:1px solid var(--rule);background:none;padding:8px 0"></div>
-  <button class="cta" onclick="saveCfg()">Save and connect</button>
-  <button class="cta ghost" onclick="try{localStorage.removeItem('wk')}catch(e){};boot()">Use mock content</button>
-  <p class="sub" style="margin-top:16px">The token stays in this browser only.</p></div>`}
-async function saveCfg(){try{localStorage.setItem('wk',JSON.stringify({url:$('#su').value.trim(),token:$('#st').value.trim()}))}catch(e){}await boot();go('settings')}
+  const e=DATA.evening||[];
+  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">At 10:30 pm, done is detected rather than asked.</p><div class="list">
+  ${e.length?e.map(x=>`<div class="chk ${x.done?'done':''}"><div class="c"></div><div><div class="tx">${esc(x.t)}</div><div class="src">${esc(x.src)}</div></div></div>`).join(''):'<p class="empty">Nothing on today’s list.</p>'}</div>
+  <p class="sub" style="margin-top:14px">Leftovers roll into tomorrow’s list.</p></div>`}
+function mail(){
+  const m=DATA.mail||[];
+  return bar()+`<div class="wrap note"><h1>Mail</h1><p class="sub">Since yesterday</p><div class="list">${m.length?m.map(x=>`<div class="row static"><div class="t"><span>${esc(x.subject)}</span></div><div class="p">${esc(x.from)}${x.why?', '+esc(x.why):''}</div></div>`).join(''):'<p class="empty">Nothing new in the inbox.</p>'}</div></div>`}
+function files(){
+  const f=DATA.files||[];
+  return bar()+`<div class="wrap note"><h1>Files</h1><p class="sub">Recently touched</p><div class="list">${f.length?f.map(x=>`<div class="row static"><div class="t"><span>${esc(x.title)}</span><small>${esc(x.when||'')}</small></div><div class="p">${esc(x.kind||'')}</div></div>`).join(''):'<p class="empty">Nothing recent. The evening check reads Drive and GitHub directly.</p>'}</div></div>`}
+function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p>
+  <button type="button" class="cta" onclick="speak()">Play rundown</button>
+  <button type="button" class="cta ghost" onclick="stopSpeech()">Stop</button></div>`}
+function stopSpeech(){try{if(aud){aud.pause();aud=null}speechSynthesis.cancel()}catch(e){}}
+
+/* ---- settings ---- */
+function settings(){
+  const d=getDraft(),c=CFG(),saved=!!c.url;
+  const marks={ok:'✓',warn:'!',bad:'✕'};
+  return bar('home')+`<div class="wrap note">
+  <h1>Settings</h1>
+  <p class="sub">${live?'Connected to '+esc(host(c.url))+'.':saved?'Saved, but not loading. The checks below say why.':'Not connected. Showing sample content.'}</p>
+
+  <h2>Your server</h2>
+  <div class="list">
+    <div class="field">
+      <label for="su">Server address</label>
+      <input id="su" name="server-url" type="url" inputmode="url" enterkeyhint="go"
+        autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="backend-production-xxxx.up.railway.app…"
+        value="${esc(d.url)}" oninput="draft.url=this.value" onkeydown="if(event.key==='Enter')saveCfg()">
+      <p class="hint">From Railway, under your service, Settings, Networking. The https is added for you.</p>
+    </div>
+    <div class="field">
+      <label for="st">API token</label>
+      <div class="inrow">
+        <input id="st" name="api-token" type="${d.show?'text':'password'}" enterkeyhint="go"
+          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" translate="no"
+          placeholder="Paste API_TOKEN…"
+          value="${esc(d.token)}" oninput="draft.token=this.value" onkeydown="if(event.key==='Enter')saveCfg()">
+        <button type="button" aria-pressed="${d.show}" onclick="draft.token=$('#st').value;draft.show=!draft.show;render()">${d.show?'Hide':'Show'}</button>
+      </div>
+      <p class="hint">The same API_TOKEN you set in Railway. It stays in this browser and is never sent anywhere else.</p>
+    </div>
+  </div>
+
+  <button type="button" class="cta" id="sv" onclick="saveCfg()" ${busy?'aria-busy="true" disabled':''}>${busy||'Save and connect'}</button>
+  ${saved?`<div class="pair">
+    <button type="button" class="cta ghost" onclick="saveCfg()">Check again</button>
+    <button type="button" class="cta ghost" onclick="forgetServer()">Forget this server</button>
+  </div>`:''}
+
+  <div aria-live="polite">
+  ${checks.length?`<h2>Checks</h2><ul class="checks">${checks.map(x=>`<li class="${x.k}"><span class="m" aria-hidden="true">${marks[x.k]}</span><div><div>${esc(x.n)}</div>${x.d?`<div class="d">${esc(x.d)}</div>`:''}</div></li>`).join('')}</ul>`:''}
+  </div>
+  </div>`}
+async function saveCfg(){
+  const u=normalizeUrl($('#su')?$('#su').value:draft.url),t=($('#st')?$('#st').value:draft.token).trim();
+  draft.url=u;draft.token=t;
+  if(!u){checks=[{k:'bad',n:'Enter the server address first',d:'The Railway domain for your backend service.'}];render();return}
+  if(!t){checks=[{k:'bad',n:'Enter the API token first',d:'Copy API_TOKEN from your Railway variables.'}];render();return}
+  try{localStorage.setItem('wk',JSON.stringify({url:u,token:t}))}catch(e){
+    checks=[{k:'bad',n:'This browser refused to save the settings',d:'Private browsing blocks storage. Try a normal window.'}];render();return}
+  busy='Connecting…';render();
+  readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;
+  await loadLive();
+  busy='';render();
+}
+function forgetServer(){
+  try{localStorage.removeItem('wk')}catch(e){}
+  draft={url:'',token:'',show:false};checks=[];live=false;liveErr='';
+  boot();
+}
 function render(){const v={home,issue,recall,today,evening,mail,files,jarvis,settings}[view];$('#app').innerHTML=v()}
 async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;await loadLive();render()}
 boot();

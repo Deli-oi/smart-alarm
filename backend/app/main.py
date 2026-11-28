@@ -1,3 +1,4 @@
+import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -17,7 +18,8 @@ from .store import InMemoryStore, MongoStore, Store
 
 
 def require_token(authorization: str = Header(default="")) -> None:
-    if authorization != f"Bearer {get_settings().api_token}":
+    # compare_digest, not ==: a plain comparison leaks the token's length and prefix by timing.
+    if not secrets.compare_digest(authorization, f"Bearer {get_settings().api_token}"):
         raise HTTPException(status_code=401, detail="bad token")
 
 
@@ -117,7 +119,8 @@ async def update_task(task_id: str, body: TaskUpdate, store: Store = Depends(get
     task = await store.get_task(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="no such task")
-    task = task.model_copy(update=body.model_dump())
+    # exclude_unset, or marking a task done would blank the note the evening check wrote.
+    task = task.model_copy(update=body.model_dump(exclude_unset=True))
     await store.put_task(task)
     return task
 
@@ -146,16 +149,19 @@ async def evening_summary(store: Store = Depends(get_store)) -> dict:
 
 @app.get("/day", dependencies=auth)
 async def day_plan(store: Store = Depends(get_store)) -> dict:
-    """Calendar events (with overlaps flagged) and the latest inbox subjects."""
-    from datetime import date as _date
+    """Calendar events (with overlaps flagged) and the latest inbox subjects.
 
-    from .sources.calendar_ics import fetch_day
-    from .sources.gmail_imap import recent_mail
+    The iCal and IMAP paths are optional, so their imports stay inside the branches that
+    use them: a missing optional dependency must not take the whole day plan down.
+    """
+    from datetime import date as _date
 
     cfg = get_settings()
     out: dict = {"date": today(), "events": [], "mail": [], "errors": []}
     if cfg.ics_url:
         try:
+            from .sources.calendar_ics import fetch_day
+
             events = await fetch_day(cfg.ics_url, _date.fromisoformat(today()), cfg.timezone)
             out["events"] = [e.model_dump() for e in events]
         except Exception as e:  # a dead link should not hide the rest of the day
@@ -167,14 +173,16 @@ async def day_plan(store: Store = Depends(get_store)) -> dict:
             out["mail"] = stored.get("mail", [])
             out["source"] = "automation"
         else:
-            out["errors"].append("calendar: no ICS_URL and no day plan stored for today")
+            out["errors"].append("No day plan stored for today yet; the morning automation writes it.")
     if cfg.gmail_user and cfg.gmail_app_password:
         try:
+            from .sources.gmail_imap import recent_mail
+
             out["mail"] = [m.model_dump() for m in await recent_mail(cfg.gmail_user, cfg.gmail_app_password)]
         except Exception as e:
             out["errors"].append(f"mail: {type(e).__name__}")
     elif not out["mail"] and "source" not in out:
-        out["errors"].append("mail: GMAIL_USER / GMAIL_APP_PASSWORD not set")
+        out["errors"].append("No inbox summary stored for today yet.")
     return out
 
 
@@ -184,10 +192,13 @@ async def dev_seed(store: Store = Depends(get_store)) -> dict:
     cfg = get_settings()
     if not (cfg.debug and cfg.store == "memory"):
         raise HTTPException(status_code=404, detail="not found")
-    from .seed import demo_issue, demo_tasks
+    from .seed import demo_day, demo_issue, demo_tasks
 
     day = today()
     await store.save_issue(demo_issue(day))
+    await store.save_day(day, demo_day(day))
     for t in demo_tasks(day):
         await store.put_task(t)
+    # Clear the day's recall attempts so the gate can be exercised repeatedly in a test run.
+    getattr(store, "attempts", []).clear()
     return {"seeded": day}

@@ -32,6 +32,23 @@ def demo_issue(day: str) -> Issue:
 
 def demo_tasks(day: str) -> list[Task]:
     return [
-        Task(id=f"{day}:t1", date=day, title="Ship the preview", status="done", source="github"),
+        Task(id=f"{day}:t1", date=day, title="Ship the preview", status="done", source="github", note="Detected: commit in your repository"),
         Task(id=f"{day}:t2", date=day, title="Reply to the recruiter"),
     ]
+
+
+def demo_day(day: str) -> dict:
+    """Same shape the morning automation writes into `day_plans`."""
+    return {
+        "date": day,
+        "events": [
+            {"start": "10:00", "end": "11:50", "title": "Lecture", "location": "", "all_day": False},
+            {"start": "11:30", "end": "12:15", "title": "Advisor meeting", "location": "Lally", "all_day": False},
+            {"start": "17:00", "end": "18:00", "title": "Gym", "location": "", "all_day": False},
+        ],
+        "mail": [
+            {"sender": "A recruiter", "subject": "Interview scheduling"},
+            {"sender": "A club", "subject": "Annual meeting Tuesday"},
+        ],
+        "notes": "Demo day plan for local development.",
+    }

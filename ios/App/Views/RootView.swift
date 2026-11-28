@@ -52,9 +52,21 @@ struct HomeView: View {
                     if !alarmStatus.isEmpty { Text(alarmStatus).foregroundStyle(.secondary) }
                 }
                 Section("Server") {
-                    TextField("https://your-backend", text: $model.serverURL).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    SecureField("Token", text: $model.token)
-                    Button("Reload") { Task { await model.loadIssue() } }
+                    // A phone keyboard will capitalise and autocorrect an address into nonsense
+                    // unless every one of these is turned off.
+                    TextField("your-backend.up.railway.app", text: $model.serverURL)
+                        .keyboardType(.URL)
+                        .textContentType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.go)
+                    SecureField("API token", text: $model.token)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Button("Save and connect") { Task { await model.loadIssue() } }
+                        .disabled(model.serverURL.isEmpty || model.token.isEmpty)
+                } footer: {
+                    Text("The same API_TOKEN you set in Railway. It stays on this phone.")
                 }
             }
             .navigationTitle("Smart Alarm")

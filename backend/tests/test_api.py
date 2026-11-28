@@ -97,4 +97,7 @@ def test_day_reports_missing_config(monkeypatch):
     finally:
         main.app.dependency_overrides.clear()
     assert r.status_code == 200
-    assert any("ICS_URL" in e for e in r.json()["errors"])
+    # The message is read by a person in the app, so it names what is missing, not the env var.
+    errors = r.json()["errors"]
+    assert any("No day plan stored" in e for e in errors), errors
+    assert not any("ICS_URL" in e or "GMAIL" in e for e in errors), errors
