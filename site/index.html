@@ -420,8 +420,8 @@ function logView(){
   const n=DATA.notes||[];
   return bar('home')+`<div class="wrap note">
   <h1>Day log</h1>
-  <p class="sub">Anything you want tonight's run to act on. It reads this at 10:30.</p>
-  <label for="jt" style="display:block;font-size:15px;font-weight:600;margin-bottom:6px">What's on your mind</label>
+  <p class="sub">Anything you want tonight\u2019s run to act on. It reads this at 10:30.</p>
+  <label for="jt" style="display:block;font-size:15px;font-weight:600;margin-bottom:6px">What\u2019s on your mind</label>
   <textarea id="jt" class="ta" placeholder="Move the gym to 6. Draft a reply to Alyssa saying yes. Remind me to book the flight\u2026"
     oninput="logDraft=this.value" enterkeyhint="done">${esc(logDraft)}</textarea>
   <button type="button" class="cta" id="jsave" onclick="saveNote()" ${logBusy?'aria-busy="true" disabled':''}>${logBusy||'Add to today'}</button>
