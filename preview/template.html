@@ -143,7 +143,8 @@ let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,t
 
 const CFG=()=>{try{return JSON.parse(localStorage.getItem('wk')||'{}')}catch(e){return{}}};
 let draft=null;
-const getDraft=()=>{if(!draft){const c=CFG();draft={url:c.url||'',token:c.token||'',show:false}}return draft};
+/* A build can pre-fill the server address (never the token, which the person pastes once). */
+const getDraft=()=>{if(!draft){const c=CFG();draft={url:c.url||(DATA.preset&&DATA.preset.url)||'',token:c.token||'',show:false}}return draft};
 
 /* A server address typed on a phone arrives without a scheme and often with a trailing slash.
    Anything but a local address gets https, so a typed hostname is never sent in the clear. */

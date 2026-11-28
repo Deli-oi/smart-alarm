@@ -1,27 +1,56 @@
 # Deploying the backend
 
-The backend must run all day: the 6:00 issue build and 10:30pm check are scheduled inside it.
-Run exactly one instance (two would fire every job twice).
+The backend is live on Railway, in its own project called **wake-up** (the Deem project is untouched).
 
-## Railway (you already use it for Deem)
+- Service: `backend`, deployed from `Deli-oi/smart-alarm`, branch `main`, root directory `/backend`
+- URL: `https://backend-production-266d0153.up.railway.app`
+- Health check: `/health`, which Railway also uses to gate each deploy
+- Every push to `main` redeploys it
 
-1. New project, deploy from `Deli-oi/smart-alarm`, root directory `backend`.
-2. Variables: `MONGODB_URI`, `MONGODB_DB=smart_alarm`, `ANTHROPIC_API_KEY`, `FISH_API_KEY`,
-   `API_TOKEN` (long random string), `GITHUB_USER=Deli-oi`, `GITHUB_TOKEN` (read-only fine-grained PAT).
-3. Generate a public domain, then open `https://<domain>/health`.
-4. In the iPhone app, enter that URL and the same `API_TOKEN` under Server.
-5. In Atlas, replace the open `0.0.0.0/0` access entry with the host's outbound IPs if it has static ones.
+Run exactly one instance. Two would fire the scheduled jobs twice.
 
-Any host that runs a Docker container works the same way (Fly.io, a small VPS).
+## Variables
+
+Set on the service in Railway, under Variables:
+
+| Name | What it is |
+|---|---|
+| `MONGODB_URI` | The Atlas connection string |
+| `MONGODB_DB` | `smart_alarm` |
+| `API_TOKEN` | A long random string. The app sends it as a bearer token |
+| `TOKEN_ENC_KEY` | Fernet key for the OAuth token vault |
+| `FISH_API_KEY` | Fish Audio, for the Jarvis voice |
+| `FISH_VOICE_ID` | Defaults to the voice in `docs/VOICE.md` |
+| `TIMEZONE` | `America/New_York` |
+| `STORE` | `mongo` |
+
+No `ANTHROPIC_API_KEY`, no `ICS_URL` and no Gmail app password. The scheduled tasks on the Claude
+account read the calendar and inbox through their own connectors and write the day's documents
+straight into Atlas, so the backend only reads and grades. See `docs/AUTOMATION.md`.
+
+With no Anthropic key set, the backend's own 6:00 issue job is skipped on purpose.
+
+## Connecting the app
+
+Open the preview, tap **Settings**, enter the server address and the `API_TOKEN`, then
+**Save and connect**. The checks list says which part worked and which did not:
+
+- *Cannot reach the server* — the address is wrong, or the service is asleep
+- *Token refused* — the token does not match `API_TOKEN` in Railway
+- *Today's issue not written yet* — normal before the 5:37 am run; the server is fine
+
+## Local development
+
+    cd backend && STORE=memory DEBUG=true API_TOKEN=testtok python -m uvicorn app.main:app --port 8765
+    curl -XPOST -H 'Authorization: Bearer testtok' localhost:8765/dev/seed
+    cd site && python -m http.server 8000
+    python scripts/e2e_ui.py
+
+`STORE=memory` skips Atlas and the scheduler. `/dev/seed` fills the day with a demo issue, a day
+plan and two tasks, and clears the recall attempts so the gate can be run again.
 
 ## Notes
 
 - The app refuses to start with the default token unless `DEBUG=true`.
-- `GET /issue/today` returns 404 until the 6:00 job has run; the app then shows its cached copy.
-- The 10:30pm result is read from `GET /evening/summary` until push notifications exist.
-
-## Connecting your calendar and inbox
-- `ICS_URL`: Google Calendar, Settings, your calendar, "Secret address in iCal format". Treat it like a password.
-- `GMAIL_USER` and `GMAIL_APP_PASSWORD`: turn on 2-step verification, then create an app password. Read-only.
-- `FISH_VOICE_ID`: optional, defaults to the voice in `docs/VOICE.md`.
-- Open the web preview, Settings, and enter the server URL and `API_TOKEN` to see it live.
+- `GET /issue/today` returns 404 until the day's issue exists; the app says so rather than failing.
+- Atlas currently allows every IP so Railway can connect. Narrow it if the host gets static IPs.

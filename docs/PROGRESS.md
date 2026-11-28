@@ -12,6 +12,12 @@
   backend: seeded issue, failed first attempt, passed second attempt, Today with calendar overlaps, evening tasks.
 - Swift core package (tests pass on Mac CI), including the `/day` models, and the app (compiles on Mac CI).
 
+## UI review and deploy (28 November 2026)
+- Backend live on Railway: https://backend-production-266d0153.up.railway.app (project `wake-up`, redeploys on push).
+- Settings rebuilt and the whole UI audited against two installed skills; findings and fixes in `docs/UI-REVIEW.md`.
+- `scripts/e2e_ui.py` now drives the real settings flow: 22 checks, all passing.
+- Issues, day plans and tasks for 27 and 28 November are in Atlas, so a live test works tonight.
+
 ## Automation (2026-11-28)
 - Daily issue and evening check run as scheduled tasks on the Claude account and write to Atlas (`docs/AUTOMATION.md`).
   A real issue, day plan and two tasks for 2026-11-28 were inserted by hand through the same path.
