@@ -67,6 +67,28 @@ async def build_evening_check() -> None:
     await run_evening_check(today(), since, MongoStore(get_db()), adapters)
 
 
+async def cache_readings() -> None:
+    """Put today's readings in the database before the morning automation looks for them.
+
+    This is the backend's own job: plain httpx from the Railway container, no Claude session
+    and nothing to approve. That is the entire point of it, so the 5:37 automation never has
+    to ask permission to visit a website at an hour when nobody is awake to grant it.
+    """
+    from datetime import date as _date
+
+    from .main import today  # local import avoids a cycle
+    from .sources.usccb import fetch_sections
+
+    day = today()
+    store = MongoStore(get_db())
+    if await store.get_readings(day) is not None:
+        return
+    try:
+        await store.save_readings(day, await fetch_sections(_date.fromisoformat(day)))
+    except Exception:
+        return  # the automation falls back to the citation it can verify
+
+
 def make_scheduler() -> AsyncIOScheduler:
     s = get_settings()
     store = MongoDBJobStore(

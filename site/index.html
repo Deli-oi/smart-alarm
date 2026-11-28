@@ -143,6 +143,12 @@ h3{font-size:23px;margin:26px 0 6px;font-weight:600;text-wrap:balance}
 .inrow button:hover{border-color:var(--brass)}
 .inrow button[aria-pressed=true]{background:var(--press)}
 .err{color:var(--oxblood);font-size:16px;line-height:1.45;margin:10px 0 0}
+.warn{margin:0 16px 10px;padding:12px 14px;border:1px solid var(--warn);border-radius:10px;
+  background:#fbf2de;color:#5a4208;font-size:15px;line-height:1.5}
+@media(prefers-color-scheme:dark){.warn{background:#2a2008;color:#e8d6a8}}
+.warn strong{display:block;margin-bottom:4px}
+.warn button{min-height:40px;margin:8px 10px 0 0;padding:8px 14px;font:inherit;font-size:15px;
+  background:none;border:1px solid currentColor;border-radius:8px;color:inherit;cursor:pointer}
 .pair{display:flex;gap:10px}
 .jot{position:fixed;right:calc(14px + env(safe-area-inset-right));
   bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;
@@ -181,6 +187,7 @@ const MOCK=JSON.parse(JSON.stringify(DATA));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let live=false,liveErr='',result=null,checks=[],busy='';
+let srcs={};  // issue | day | tasks -> 'live' or a failure reason. Empty when no server is set.
 let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,timer=null;
 
 const CFG=()=>{try{return JSON.parse(localStorage.getItem('wk')||'{}')}catch(e){return{}}};
@@ -255,7 +262,8 @@ async function loadLive(){
     else checks.push({k:'bad',n:name[i],d:String(g.reason&&g.reason.message||g.reason)});
   });
 
-  const d={};let any=false,miss=[];
+  const d={};let any=false,miss=[];srcs={};
+  const why=g=>{const e=g.reason||{};return e.status===404?'not written yet':String(e.message||e)};
   if(iss.status==='fulfilled'&&quiz.status==='fulfilled'){
     const I=await iss.value.json(),Q=await quiz.value.json();
     Object.assign(d,{
@@ -265,15 +273,16 @@ async function loadLive(){
       flag:I.critical&&I.critical.length?I.critical.join(' '):null,
       articles:I.articles.map(a=>({tag:KIND[a.kind]||a.kind,title:a.title,svg:a.svg||'',body:a.body.split(/\n\s*\n/)})),
       quiz:Q.map(q=>({id:q.id,q:q.prompt,o:q.choices}))});
-    any=true;
-  }else miss.push('the issue and recall questions');
+    any=true;srcs.issue='live';
+  }else{miss.push('the issue and recall questions');
+    srcs.issue=why(iss.status==='rejected'?iss:quiz);}
   if(day.status==='fulfilled'){
     const D=await day.value.json();
     Object.assign(d,{events:(D.events||[]).filter(e=>!e.all_day).map(e=>({start:e.start,end:e.end,title:e.title,note:e.location||''})),
       mail:(D.mail||[]).map(m=>({from:m.sender,subject:m.subject,why:''})),
       notes:D.notes||'',errors:D.errors||[]});
-    any=true;
-  }else miss.push('the day plan');
+    any=true;srcs.day='live';
+  }else{miss.push('the day plan');srcs.day=why(day);}
   try{
     const N=await api('/notes/today').then(r=>r.json());
     d.notes=N.map(x=>({when:localTime(x.at),text:x.text,sent:x.sent_at?localTime(x.sent_at):''}));
@@ -288,8 +297,8 @@ async function loadLive(){
     const T=await tasks.value.json();
     d.evening=T.map(t=>({t:t.title,done:t.status==='done',
       src:t.status==='done'?('Detected: '+(t.source||'marked done')):(t.note||'Not detected yet')}));
-    any=true;
-  }else miss.push('tasks');
+    any=true;srcs.tasks='live';
+  }else{miss.push('tasks');srcs.tasks=why(tasks);}
 
   if(any){try{const n=await flushQueue();if(n)liveErr=''}catch(e){}}
   live=any;
@@ -521,6 +530,7 @@ function archive(){
     :`<p class="empty">${live?'No issues yet.':'Connect a server to read past issues.'}</p>`}</div></div>`;
 }
 function issue(){
+  const guard=sampleGuard('issue','Morning Issue');if(guard)return bar()+guard;
   const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>`
     +(x.svg?`<figure class="fig">${sanitizeSvg(x.svg)}</figure>`:'')
     +x.body.map(p=>`<p>${esc(p)}</p>`).join('')).join('<hr class="rule">');
@@ -542,6 +552,7 @@ async function submitLive(){
   finally{submitting=false}
   render()}
 function recall(){
+  const guard=sampleGuard('issue','Recall');if(guard)return bar()+guard;
   if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button type="button" class="cta" onclick="readDone=true;go('recall')">Skip ahead (preview only)</button></div>`;
   const liveQuiz=live&&DATA.quiz.length&&DATA.quiz[0].id;
   if(liveQuiz&&qi>=DATA.quiz.length){
@@ -562,12 +573,14 @@ function recall(){
   ${q.o.map((o,i)=>`<button type="button" class="opt" aria-pressed="${sel===i}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
   <button type="button" class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next question'}</button></div>`}
 function today(){
+  const guard=sampleGuard('day','Today');if(guard)return bar()+guard;
   if(!unlocked)return bar()+`<div class="wrap note"><h1>Today${LOCK}</h1><p class="sub">Locked until recall is passed.</p><button type="button" class="cta" onclick="go('recall')">Go to recall</button></div>`;
   const it=dayItems();
   return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}${DATA.notes?' — '+esc(DATA.notes):''}</p><div class="list" style="padding:2px 16px"><ul class="tl">
   ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
   <button type="button" class="cta ghost" data-voice="Play my rundown" onclick="speak()">Play my rundown</button></div>`}
 function evening(){
+  const guard=sampleGuard('tasks','Evening Check');if(guard)return bar()+guard;
   const e=DATA.evening||[],sum=DATA.summary||'';
   return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">At 10:30 pm, done is detected rather than asked.</p>
   ${sum?`<h2>What last night's run did</h2><div class="list"><div class="entry">${esc(sum).replace(/\n/g,'<br>')}</div></div>`:''}
@@ -739,10 +752,34 @@ function forgetServer(){
   draft={url:'',token:'',show:false};checks=[];live=false;liveErr='';
   boot();
 }
+/* A server is configured but something did not load. The app used to quietly swap in sample
+   content, which looks exactly like a working app showing the wrong day. Now it says so on
+   every screen, and the screens whose data failed refuse to show samples at all. */
+const failed=()=>Object.entries(srcs).filter(([,v])=>v&&v!=='live');
+function banner(){
+  if(!CFG().url||!failed().length)return '';
+  const names={issue:'Today\u2019s issue',day:'The day plan',tasks:'Your tasks'};
+  return `<div class="warn" role="status">
+    <strong>Not showing live data.</strong>
+    ${failed().map(([k,v])=>`<div>${esc(names[k]||k)}: ${esc(v)}</div>`).join('')}
+    <button type="button" onclick="boot()">Try again</button>
+    <button type="button" onclick="go('settings')">Settings</button>
+  </div>`;
+}
+function sampleGuard(key,label){
+  const bad=srcs[key];
+  if(!bad||bad==='live'||!CFG().url)return '';
+  return `<div class="wrap note"><h1>${esc(label)}</h1>
+    <p class="err">This did not load from your server, so there is nothing real to show.
+    The app will not stand in sample content here.</p>
+    <p class="sub">${esc(bad)}</p>
+    <button type="button" class="cta" onclick="boot()">Try again</button>
+    <button type="button" class="cta ghost" onclick="go('settings')">Open settings</button></div>`;
+}
 function render(){
   const v={home,wake,issue,recall,today,evening,mail,files,jarvis,settings,archive,log:logView}[view];
   const jot=view==='log'?'':'<button type="button" class="jot" onclick="go(\'log\')">Note</button>';
-  $('#app').innerHTML=v()+jot;
+  $('#app').innerHTML=banner()+v()+jot;
   paintVoice();
 }
 async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;

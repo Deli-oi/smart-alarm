@@ -173,6 +173,40 @@ three come out.
 rule above makes that structural rather than a matter of care. `GET /issues` lists them newest
 first and `GET /issue/{date}` reads one, behind an Archive screen in the app.
 
+## Failures are shown, never papered over with samples
+
+*28 November 2026.* He opened the app and saw a complete, plausible morning issue dated the
+wrong day. The backend had been down for an hour and the app had quietly substituted its sample
+content, which looks exactly like a working app showing stale news. That is worse than an error:
+an error he can act on.
+
+Now, whenever a server is configured and a section fails to load, a banner appears **on every
+screen** naming which part failed and why, with a retry. The screens whose data failed refuse to
+render samples at all and say so. Sample content is only ever shown when no server is configured,
+which is the one case where it is honest.
+
+## How three deploys failed while CI stayed green
+
+*28 November 2026.* Worth writing down because the shape recurs.
+
+`cache_readings` was referenced in the scheduler but never defined: the patch that was meant to
+add the function matched nothing, made no change, and reported success. Every deploy after that
+died on startup with `NameError`, Railway kept serving the previous build, and nothing said so.
+
+It survived CI because the tests exercise routes through dependency overrides and **never run the
+lifespan**, which is the only place the scheduler is built. And I was reading GitHub Actions,
+which was green, instead of the Railway deployment, which was not. Green CI is not a deployed app.
+
+Three gates now close it:
+- `ruff check --select F,E9` runs first in CI. It found the `NameError` in a second, and then
+  found a second one in the fix for it.
+- A test builds the scheduler and resolves every job's callable, imports every module in the
+  package, and asserts that every route the app calls still exists.
+- CI imports the app and builds the scheduler as an explicit step, so a startup failure is a
+  red build rather than a silent rollback.
+
+**Check Railway, not just GitHub, after any push that touches the backend.**
+
 # Wanted next
 
 Not built. Recorded so the shape is not lost.

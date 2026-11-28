@@ -1,9 +1,9 @@
 name: backend
 on:
   push:
-    paths: ["backend/**", ".github/workflows/backend.yml"]
+    paths: ["backend/**", "scripts/**", ".github/workflows/backend.yml"]
   pull_request:
-    paths: ["backend/**"]
+    paths: ["backend/**", "scripts/**"]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -12,4 +12,16 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -e "backend[dev]"
+
+      # Undefined names first. Three deploys in a row failed on a NameError that the test
+      # suite could not see, because the scheduler is only built inside the app lifespan.
+      # This catches that class of fault in a second, before anything else runs.
+      - name: lint for undefined names
+        run: ruff check --select F,E9 backend/app backend/tests scripts
+
       - run: cd backend && pytest -q
+
+      # Prove the app can actually start. Tests exercise the routes through dependency
+      # overrides and never run the lifespan, which is exactly where the deploy died.
+      - name: the app must import and the scheduler must build
+        run: cd backend && python -c "from app.main import app; from app.schedule import make_scheduler; make_scheduler(); print('startup ok')"
