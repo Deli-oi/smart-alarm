@@ -10,10 +10,12 @@ SETUP
 - Today's date D (America/New_York) as YYYY-MM-DD.
 - Load the MongoDB Atlas tools with ToolSearch if needed. Call remote-atlas-connect with projectId 6b08e756a5de7d669fd15af7 and clusterName Smart-Alarm. Use database "smart_alarm" and the returned connectionId.
 
-- Check collection "issues" for a document with date D. If one exists, add up the words in its
-  article bodies. 1,800 or more means a real issue is already there: skip steps 1 and 2 and
-  continue from step 3. Fewer than 1,800 means it is a stub or an issue written to the old
-  brief, so build a new one. Build it in full FIRST, then write it with a single update-many upsert on
+- Check collection "issues" for a document with date D. Skip steps 1 and 2 and continue from
+  step 3 ONLY IF BOTH hold: its article bodies come to 1,800 words or more, AND every article's
+  "kind" is one of "tech", "howto" or "body". Anything else means it is a stub, or an issue
+  written to the old brief (kinds "missed_news", "research" or "wildcard", subjects like Fed
+  rates and macroeconomics), so build a new one and replace it. Word count alone is not enough:
+  a long issue on the wrong subjects is still the wrong issue. Build it in full FIRST, then write it with a single update-many upsert on
   {"date": D}, so a run that fails halfway leaves him with the old issue rather than nothing.
 
 1. READINGS. Read them from the database, not from the web. find in collection "readings" where
