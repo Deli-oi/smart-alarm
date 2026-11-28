@@ -6,6 +6,7 @@ A personalized wake-up system: a 7:00 alarm, a 15-minute newsletter, a recall ga
 - `backend/` - Python (FastAPI) with MongoDB Atlas. Reads and grades; it never calls Claude.
 - `preview/` + `site/` - the web app. `preview/build.py` writes `site/index.html`.
 - `automation/` - the prompts the scheduled tasks on the Claude account run.
+- `CLAUDE.md` - **read first if you are an agent working here.** Verification rules, written from the failures that caused them.
 - `docs/` - **start with `DECISIONS.md`**, then `AUTOMATION.md` and `DEPLOY.md`.
 
 ## Backend quick start
