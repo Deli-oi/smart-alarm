@@ -231,6 +231,25 @@ async def main() -> int:
         await pg.wait_for_timeout(800)
         check("forget returns to sample content", "Not connected" in await pg.inner_text("#app"))
 
+        # --- a diagram from the database must render, and must not carry script with it
+        hostile = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' onload='window.__x=1'>"
+                   "<script>window.__y=1</script><rect x='2' y='2' width='96' height='36' fill='none' "
+                   "stroke='currentColor'/><text x='50' y='25' text-anchor='middle'>cache</text>"
+                   "<a href='javascript:window.__z=1'><circle cx='10' cy='10' r='3'/></a></svg>")
+        await pg.evaluate(
+            "s => { DATA.articles[0].svg = s; go('issue'); }", hostile
+        )
+        await pg.wait_for_timeout(300)
+        check("the diagram renders", await pg.locator("figure.fig svg").count() == 1)
+        check("its label survives", "cache" in await pg.inner_text("figure.fig"))
+        check("the onload attribute is stripped", await pg.evaluate("window.__x === undefined"))
+        check("the script element is stripped", await pg.evaluate("window.__y === undefined"))
+        check("no script element remains", await pg.locator("figure.fig script").count() == 0)
+        anchors = await pg.evaluate(
+            "[...document.querySelectorAll('figure.fig [href]')].map(e => e.getAttribute('href'))"
+        )
+        check("javascript hrefs are stripped", all("javascript:" not in (h or "") for h in anchors), str(anchors))
+
         # --- the dark theme has to be legible, not just present
         dark = await b.new_page(viewport={"width": 430, "height": 900}, color_scheme="dark")
         await dark.goto(URL)

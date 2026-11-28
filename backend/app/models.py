@@ -10,10 +10,14 @@ class Reading(BaseModel):
 
 
 class Article(BaseModel):
-    kind: Literal["missed_news", "research", "wildcard"]
+    kind: Literal["missed_news", "research", "wildcard", "tech", "howto", "body"]
     title: str
     source_url: str = ""
-    body: str  # about 700 words, written for reading on a screen
+    body: str  # written for reading on a screen; see docs/READER-PROFILE.md for the pitch
+    # An optional labelled diagram, as an SVG document. Drawn when the subject is spatial,
+    # sequential or architectural. The app sanitises it before rendering: see sanitizeSvg in
+    # preview/template.html. Keep it under ~8 KB and give it a viewBox so it scales.
+    svg: str = Field(default="", max_length=20000)
 
 
 class Question(BaseModel):
@@ -37,7 +41,9 @@ class Issue(BaseModel):
     readings: list[Reading]
     reflection: str = ""
     critical: list[str] = []  # rare; empty on most days
-    articles: list[Article] = Field(min_length=3, max_length=3)
+    # Two by default: one long piece that teaches something, one short one on the body.
+    # Three is still allowed so older issues keep validating. See docs/READER-PROFILE.md.
+    articles: list[Article] = Field(min_length=2, max_length=3)
     questions: list[Question] = Field(min_length=6)
 
     def word_count(self) -> int:

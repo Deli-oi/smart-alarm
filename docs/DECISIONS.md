@@ -143,6 +143,30 @@ they are not part of the running system.
 network first with the cache as fallback, not the other way round. Cache first would keep serving
 a stale app for days after a push, and this page changes far more often than it is opened.
 
+## The issue is two articles, tech and body
+
+*28 November 2026.* Eli: "i dont really care about fed rates and economic issues as much as
+newest ai models, a variety of up and coming startups, and other tech news. the only thing i want
+is tech news thatll help me get smarter, or an article thatll teach me how to do something."
+
+So: article one is tech or how-to, at least 1,500 words, pitched at mechanism rather than
+headline. Article two is nutrition or fitness in 300 to 500 words, because he asked for short.
+The wildcard is gone and the macro article with it. `docs/READER-PROFILE.md` carries the brief
+on what he already knows, and the task prompt repeats the essentials because a scheduled run is
+standalone and cannot read the repository.
+
+Both are pitched above his existing knowledge on purpose. The most common way this fails is
+explaining something he has known for two years.
+
+## Articles can carry a diagram
+
+*28 November 2026.* An article may set an `svg` field, drawn when the subject is spatial,
+sequential or architectural. The app sanitises it before rendering, because the content arrives
+from the database and `innerHTML` with raw SVG is a script injection waiting to happen: tags are
+whitelisted, every `on*` attribute and `javascript:` URL is stripped, and the end-to-end suite
+feeds it a hostile SVG carrying an `onload`, a `<script>` and a `javascript:` href to prove all
+three come out.
+
 ## Every issue is kept
 
 *28 November 2026.* One document per day in `issues`, and nothing ever deletes them; the upsert

@@ -78,6 +78,8 @@ h3{font-size:23px;margin:26px 0 6px;font-weight:600;text-wrap:balance}
 .note p{font-size:18px;line-height:1.62;margin:0 0 14px;max-width:64ch}
 .kind{font-size:15px;color:var(--mute);font-style:italic;margin:0 0 10px}
 .rule{height:1px;background:var(--rule);margin:24px 0;border:0}
+.fig{margin:14px 0 18px;padding:14px;background:var(--card);border:1px solid var(--rule);border-radius:10px}
+.fig svg{display:block;max-width:100%;height:auto}
 
 .cta{display:block;width:100%;min-height:48px;margin-top:14px;padding:13px 16px;
   border:1px solid var(--oxblood);background:var(--oxblood);color:#f8f3e6;border-radius:10px;
@@ -261,7 +263,7 @@ async function loadLive(){
       readings:{cite:I.readings.map(r=>r.reference).join(' and '),
                 gist:I.reflection||I.readings.map(r=>r.text).join(' ')},
       flag:I.critical&&I.critical.length?I.critical.join(' '):null,
-      articles:I.articles.map(a=>({tag:KIND[a.kind]||a.kind,title:a.title,body:a.body.split(/\n\s*\n/)})),
+      articles:I.articles.map(a=>({tag:KIND[a.kind]||a.kind,title:a.title,svg:a.svg||'',body:a.body.split(/\n\s*\n/)})),
       quiz:Q.map(q=>({id:q.id,q:q.prompt,o:q.choices}))});
     any=true;
   }else miss.push('the issue and recall questions');
@@ -278,6 +280,10 @@ async function loadLive(){
   }catch(e){d.notes=[]}
   try{d.summary=(await api('/evening/summary').then(r=>r.json())).text||''}catch(e){d.summary=''}
   try{d.reg=await api('/regularity').then(r=>r.json())}catch(e){d.reg=null}
+  /* Asking for the readings makes the server fetch and cache them if it has not already, so
+     opening the app warms tomorrow's cache as a side effect. The result is not displayed here;
+     the morning automation reads the stored copy. */
+  try{d.readings_source=(await api('/readings/today').then(r=>r.json())).source}catch(e){d.readings_source=''}
   if(tasks.status==='fulfilled'){
     const T=await tasks.value.json();
     d.evening=T.map(t=>({t:t.title,done:t.status==='done',
@@ -291,6 +297,31 @@ async function loadLive(){
   Object.assign(DATA,MOCK,d,{mode:any?(miss.length?'Partly live':'Live'):'Sample',files:d.files||[]});
 }
 
+const SVG_OK=new Set(['svg','g','path','rect','circle','ellipse','line','polyline','polygon',
+  'text','tspan','defs','marker','title','desc','use','symbol','clipPath','linearGradient','stop']);
+function sanitizeSvg(src){
+  try{
+    const doc=new DOMParser().parseFromString(String(src),'image/svg+xml');
+    const root=doc.documentElement;
+    if(!root||root.nodeName.toLowerCase()!=='svg'||doc.querySelector('parsererror'))return '';
+    const walk=n=>{
+      for(const el of [...n.children]){
+        if(!SVG_OK.has(el.nodeName.toLowerCase())){el.remove();continue}
+        for(const a of [...el.attributes]){
+          const name=a.name.toLowerCase(),val=String(a.value);
+          if(name.startsWith('on')||/javascript:/i.test(val)||(name==='href'&&!val.startsWith('#')))
+            el.removeAttribute(a.name);
+        }
+        walk(el);
+      }
+    };
+    walk(root);
+    root.setAttribute('width','100%');
+    root.removeAttribute('height');
+    root.setAttribute('role','img');
+    return root.outerHTML;
+  }catch(e){return ''}
+}
 const LOCK='<svg class="lock" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
 function go(v){view=v;sel=null;render();window.scrollTo(0,0)}
 function bar(back,trailing){
@@ -477,6 +508,7 @@ function archive(){
       <h3>${esc((i.readings||[]).map(r=>r.reference).join(' and '))}</h3>
       <p>${esc(i.reflection||'')}</p><hr class="rule">
       ${(i.articles||[]).map(a=>`<h3>${esc(a.title)}</h3><p class="kind">${esc(KIND[a.kind]||a.kind)}</p>`
+        +(a.svg?`<figure class="fig">${sanitizeSvg(a.svg)}</figure>`:'')
         +a.body.split(/\n\s*\n/).map(x=>`<p>${esc(x)}</p>`).join('')).join('<hr class="rule">')}</div>`;
   }
   const rows=archList||[];
@@ -489,7 +521,9 @@ function archive(){
     :`<p class="empty">${live?'No issues yet.':'Connect a server to read past issues.'}</p>`}</div></div>`;
 }
 function issue(){
-  const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
+  const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>`
+    +(x.svg?`<figure class="fig">${sanitizeSvg(x.svg)}</figure>`:'')
+    +x.body.map(p=>`<p>${esc(p)}</p>`).join('')).join('<hr class="rule">');
   return bar()+`<div class="wrap note"><p class="kind">Morning issue</p><h1 style="font-size:30px">${esc(DATA.date)}</h1>
   <div class="prog"><i id="pg"></i></div><p class="kind" style="margin-top:7px">Reading time runs at 60&times; in this preview</p>
   <h3>${esc(DATA.readings.cite)}</h3><p>${esc(DATA.readings.gist)}</p>
