@@ -57,6 +57,19 @@ class SubmitAnswers(BaseModel):
     answers: dict[str, int]  # question id -> chosen index
 
 
+class Note(BaseModel):
+    """One thing he said during the day. The server stamps the time, not the phone."""
+
+    at: str  # ISO 8601, UTC
+    text: str = Field(min_length=1, max_length=4000)
+    kind: Literal["note", "reply"] = "note"
+
+
+class NoteRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    kind: Literal["note", "reply"] = "note"
+
+
 class SkipRequest(BaseModel):
     """Why the gate was skipped. Free text, kept short, written to the record."""
 

@@ -52,3 +52,28 @@ From the next night, commits count as evidence that a task is done.
 Apple Notes and Outlook are in the original list of sources and are not covered. Outlook has no
 connector on the account; Apple Notes is not reachable from a cloud session at all, and would
 need the desktop app connected.
+
+## The day log
+
+The app keeps a running log of anything he says during the day. `POST /notes` stamps each entry
+with the server's time, `GET /notes/today.md` assembles the day as one markdown file, and the
+evening run reads the `notes` collection and acts on it.
+
+What the evening run may do with a note:
+
+| In the note | What happens |
+|---|---|
+| A time or a plan | A Google Calendar event, after checking it is not already there |
+| A message to someone | A Gmail **draft**, never sent |
+| Something to do | A task on tomorrow's list, `source: daylog` |
+| A thought | Stays in the record, nothing else |
+
+It may never send mail, reply, delete, decline an invitation or edit a file. Anything a note asks
+for beyond that list is reported in the summary and left for him.
+
+### Asking for it before 10:30
+
+"Send it to Claude now" sets `process_requested` on the day's `day_log` document. The evening run
+clears the flag whether or not it was set. Nothing polls for it yet, so today that flag only
+changes what the 10:30 run knows; an on-demand run needs either a message to Claude or an hourly
+scheduled task, which would be 24 sessions a day against the account's usage.

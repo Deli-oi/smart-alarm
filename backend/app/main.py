@@ -1,18 +1,29 @@
 import secrets
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from . import recall
 from .briefing import build_briefing
 from .config import get_settings
+from .daylog import day_log_markdown
 from .db import close_client, ensure_indexes, get_db
 from .llm import fish_speech
-from .models import GateResponse, Issue, PublicQuestion, SkipRequest, SubmitAnswers, Task, TaskUpdate
+from .models import (
+    GateResponse,
+    Issue,
+    Note,
+    NoteRequest,
+    PublicQuestion,
+    SkipRequest,
+    SubmitAnswers,
+    Task,
+    TaskUpdate,
+)
 from .schedule import make_scheduler
 from .store import InMemoryStore, MongoStore, Store
 
@@ -121,6 +132,42 @@ async def quiz_skip(body: SkipRequest, store: Store = Depends(get_store)) -> dic
 @app.get("/quiz/skips", dependencies=auth)
 async def quiz_skips(store: Store = Depends(get_store)) -> dict:
     return {"skips": await store.list_skips(today())}
+
+
+@app.post("/notes", dependencies=auth)
+async def add_note(body: NoteRequest, store: Store = Depends(get_store)) -> Note:
+    """Anything he says during the day. The server stamps the time so the phone's clock,
+    time zone and offline queueing can't reorder the day."""
+    note = Note(at=datetime.now(timezone.utc).isoformat(timespec="seconds"), text=body.text.strip(), kind=body.kind)
+    await store.add_note(today(), note)
+    return note
+
+
+@app.get("/notes/today", dependencies=auth)
+async def notes_today(store: Store = Depends(get_store)) -> list[Note]:
+    return await store.list_notes(today())
+
+
+@app.get("/notes/today.md", dependencies=auth)
+async def notes_markdown(store: Store = Depends(get_store)) -> PlainTextResponse:
+    """The day as one markdown file. This is what the evening run reads and acts on."""
+    day = today()
+    return PlainTextResponse(
+        day_log_markdown(day, await store.list_notes(day), await store.list_tasks(day)),
+        media_type="text/markdown; charset=utf-8",
+    )
+
+
+@app.post("/notes/process-now", dependencies=auth)
+async def process_now(store: Store = Depends(get_store)) -> dict:
+    """Ask for the day log to be acted on before 10:30. The evening automation clears this."""
+    await store.set_processing(today(), True)
+    return {"requested": True, "date": today()}
+
+
+@app.get("/notes/pending", dependencies=auth)
+async def process_pending(store: Store = Depends(get_store)) -> dict:
+    return {"requested": await store.processing_requested(today())}
 
 
 @app.get("/tasks/today", dependencies=auth)

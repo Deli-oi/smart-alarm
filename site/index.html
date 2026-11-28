@@ -119,6 +119,20 @@ h3{font-size:23px;margin:26px 0 6px;font-weight:600;text-wrap:balance}
 .inrow button[aria-pressed=true]{background:var(--press)}
 .err{color:var(--oxblood);font-size:16px;line-height:1.45;margin:10px 0 0}
 .pair{display:flex;gap:10px}
+.jot{position:fixed;right:calc(14px + env(safe-area-inset-right));
+  bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;
+  min-height:48px;padding:12px 20px;border-radius:26px;border:1px solid var(--oxblood);
+  background:var(--oxblood);color:#f8f3e6;font:inherit;font-size:17px;cursor:pointer;
+  box-shadow:0 6px 18px rgba(60,40,10,.22)}
+.jot:hover{background:#56141f}
+.jot:active{background:#43101a}
+@media(min-width:520px){.jot{position:absolute}}
+.ta{width:100%;min-height:120px;font:inherit;font-size:17px;line-height:1.5;color:var(--ink);
+  background:#fffdf7;border:1px solid var(--rule);border-radius:10px;padding:12px;resize:vertical}
+.ta:focus{border-color:var(--brass)}
+.entry{padding:12px 16px;border-bottom:1px solid var(--rule);font-size:17px;line-height:1.45}
+.entry:last-child{border-bottom:0}
+.entry .tm{color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:2px}
 .pair .cta{flex:1;min-width:0;font-size:16px}
 
 .checks{margin:16px 0 0;padding:0;list-style:none;background:var(--card);
@@ -232,6 +246,10 @@ async function loadLive(){
       notes:D.notes||'',errors:D.errors||[]});
     any=true;
   }else miss.push('the day plan');
+  try{
+    const N=await api('/notes/today').then(r=>r.json());
+    d.notes=N.map(x=>({when:localTime(x.at),text:x.text}));
+  }catch(e){d.notes=[]}
   if(tasks.status==='fulfilled'){
     const T=await tasks.value.json();
     d.evening=T.map(t=>({t:t.title,done:t.status==='done',
@@ -266,15 +284,53 @@ function rundown(){
   if(c.length)s+=`Heads up, ${c[0].title} overlaps with another event. `;
   s+=(DATA.mail&&DATA.mail[0])?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
   s+='Your breakfast block is protected from seven thirty five. That is everything.';return s}
-let aud=null;
-async function speak(){
+let aud=null,voiceState='',voiceUrl='',skipping=false,submitting=false,connecting=false;
+/* One tap starts it, a second stops it. The guard is set before the first await, or two
+   quick taps both get past it and you hear the rundown twice, over itself. */
+function paintVoice(){
+  document.querySelectorAll('[data-voice]').forEach(b=>{
+    b.textContent = voiceState==='loading' ? 'Preparing the voice\u2026'
+                  : voiceState==='playing' ? 'Stop'
+                  : b.dataset.voice;
+    b.setAttribute('aria-busy', voiceState==='loading');
+  });
+}
+function stopSpeech(){
   try{if(aud){aud.pause();aud=null}}catch(e){}
+  try{speechSynthesis.cancel()}catch(e){}
+  voiceState='';paintVoice();
+}
+function deviceVoice(){
   try{
-    if(live){const b=await api('/jarvis/speak',null,25000).then(r=>r.blob());aud=new Audio(URL.createObjectURL(b));await aud.play();return}
-    if(DATA.audio){aud=new Audio(DATA.audio);await aud.play();return}
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(rundown());u.rate=.98;
+    u.onend=()=>{voiceState='';paintVoice()};
+    speechSynthesis.speak(u);voiceState='playing';
+  }catch(e){voiceState=''}
+  paintVoice();
+}
+async function speak(){
+  if(voiceState){stopSpeech();return}
+  voiceState='loading';paintVoice();
+  const play=async(src)=>{
+    const a=new Audio(src);
+    a.onended=()=>{voiceState='';paintVoice()};
+    await a.play();
+    if(voiceState!=='loading'){a.pause();return}   // stopped while it loaded
+    aud=a;voiceState='playing';paintVoice();
+  };
+  try{
+    if(voiceUrl){await play(voiceUrl);return}      // already fetched once this session
+    if(live){
+      const b=await api('/jarvis/speak',null,30000).then(r=>r.blob());
+      if(voiceState!=='loading')return;
+      voiceUrl=URL.createObjectURL(b);
+      await play(voiceUrl);return;
+    }
+    if(DATA.audio){await play(DATA.audio);return}
   }catch(e){}
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(rundown());u.rate=.98;speechSynthesis.speak(u)}catch(e){}}
-
+  deviceVoice();
+}
 function home(){
   const ev=DATA.events||[],mail=DATA.mail||[],files=DATA.files||[],evening=DATA.evening||[];
   const left=evening.filter(x=>!x.done).length;
@@ -290,6 +346,7 @@ function home(){
   <button type="button" class="row" onclick="go('jarvis')"><div class="t"><span>Jarvis</span><small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
   <h2>Sources</h2><div class="list">
   <button type="button" class="row" onclick="go('mail')"><div class="t"><span>Mail</span><small>${mail.length}</small></div><div class="p">${esc(mail[0]?mail[0].subject:'Nothing new')}</div></button>
+  <button type="button" class="row" onclick="go('log')"><div class="t"><span>Day log</span><small>${(DATA.notes||[]).length}</small></div><div class="p">${esc((DATA.notes||[])[0]?(DATA.notes||[]).slice(-1)[0].text:'Anything you want tonight to act on')}</div></button>
   <button type="button" class="row" onclick="go('files')"><div class="t"><span>Files</span><small>${files.length}</small></div><div class="p">${esc(files[0]?files[0].title:'Nothing recent')}</div></button></div>
   </div>`}
 function issue(){
@@ -305,9 +362,11 @@ function startRead(){
   b.textContent='Reading, '+Math.max(0,15-Math.round(t/60))+' min left';
   if(t>=total){clearInterval(timer);readDone=true;b.disabled=false;b.textContent='Continue to recall';b.onclick=()=>go('recall')}},1000)}
 async function submitLive(){
+  if(submitting)return;submitting=true;          // a second render must not spend a second attempt
   const body={answers:Object.fromEntries(DATA.quiz.map((q,i)=>[q.id,answers[i]]))};
   try{result=await api('/quiz/submit',{method:'POST',body:JSON.stringify(body)}).then(r=>r.json())}
   catch(e){result={result:'retry',score:0,error:String(e.message||e)}}
+  finally{submitting=false}
   render()}
 function recall(){
   if(!readDone)return bar()+`<div class="wrap note"><h1>Recall</h1><p class="sub">Opens after the morning reading.</p><button type="button" class="cta" onclick="readDone=true;go('recall')">Skip ahead (preview only)</button></div>`;
@@ -333,7 +392,7 @@ function today(){
   const it=dayItems();
   return bar()+`<div class="wrap note"><h1>Today</h1><p class="sub">${esc(DATA.date)}${DATA.notes?' — '+esc(DATA.notes):''}</p><div class="list" style="padding:2px 16px"><ul class="tl">
   ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
-  <button type="button" class="cta ghost" onclick="speak()">Play my rundown</button></div>`}
+  <button type="button" class="cta ghost" data-voice="Play my rundown" onclick="speak()">Play my rundown</button></div>`}
 function evening(){
   const e=DATA.evening||[];
   return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">At 10:30 pm, done is detected rather than asked.</p><div class="list">
@@ -346,15 +405,56 @@ function files(){
   const f=DATA.files||[];
   return bar()+`<div class="wrap note"><h1>Files</h1><p class="sub">Recently touched</p><div class="list">${f.length?f.map(x=>`<div class="row static"><div class="t"><span>${esc(x.title)}</span><small>${esc(x.when||'')}</small></div><div class="p">${esc(x.kind||'')}</div></div>`).join(''):'<p class="empty">Nothing recent. The evening check reads Drive and GitHub directly.</p>'}</div></div>`}
 function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p>
-  <button type="button" class="cta" onclick="speak()">Play rundown</button>
-  <button type="button" class="cta ghost" onclick="stopSpeech()">Stop</button></div>`}
+  <button type="button" class="cta" data-voice="Play rundown" onclick="speak()">Play rundown</button></div>`}
 /* The gate is meant to be skippable. It is also meant to cost something to look back on,
    so every skip is written to the server before the day opens. */
 async function emergencySkip(){
+  if(skipping)return;skipping=true;
   if(live){try{await api('/quiz/skip',{method:'POST',body:JSON.stringify({reason:'skipped from the app'})})}catch(e){}}
-  unlocked=true;go('today');
+  skipping=false;unlocked=true;go('today');
 }
-function stopSpeech(){try{if(aud){aud.pause();aud=null}speechSynthesis.cancel()}catch(e){}}
+
+/* ---- the day log ---- */
+let logDraft='',logBusy='',logMsg='';
+function logView(){
+  const n=DATA.notes||[];
+  return bar('home')+`<div class="wrap note">
+  <h1>Day log</h1>
+  <p class="sub">Anything you want tonight's run to act on. It reads this at 10:30.</p>
+  <label for="jt" style="display:block;font-size:15px;font-weight:600;margin-bottom:6px">What's on your mind</label>
+  <textarea id="jt" class="ta" placeholder="Move the gym to 6. Draft a reply to Alyssa saying yes. Remind me to book the flight\u2026"
+    oninput="logDraft=this.value" enterkeyhint="done">${esc(logDraft)}</textarea>
+  <button type="button" class="cta" id="jsave" onclick="saveNote()" ${logBusy?'aria-busy="true" disabled':''}>${logBusy||'Add to today'}</button>
+  <div aria-live="polite">${logMsg?`<p class="sub" style="margin-top:12px">${esc(logMsg)}</p>`:''}</div>
+  <h2>Today, ${n.length} ${n.length===1?'entry':'entries'}</h2>
+  <div class="list">${n.length?n.map(x=>`<div class="entry"><div class="tm">${esc(x.when)}</div>${esc(x.text)}</div>`).join(''):'<p class="empty">Nothing yet today.</p>'}</div>
+  <button type="button" class="cta ghost" onclick="processNow()">Send it to Claude now</button>
+  <p class="sub">Otherwise it goes at 10:30 with everything else.</p>
+  </div>`}
+async function saveNote(){
+  const t=(($('#jt')&&$('#jt').value)||logDraft).trim();
+  if(!t){logMsg='Nothing to add yet.';render();return}
+  if(logBusy)return;
+  logBusy='Saving\u2026';render();
+  if(live){
+    try{
+      const n=await api('/notes',{method:'POST',body:JSON.stringify({text:t})}).then(r=>r.json());
+      (DATA.notes=DATA.notes||[]).push({when:localTime(n.at),text:n.text});
+      logDraft='';logMsg='Added.';
+    }catch(e){logMsg='Could not save it to the server: '+String(e.message||e)+' It is still in the box.';}
+  }else{
+    (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t});
+    logDraft='';logMsg='Added to the sample log. Connect a server to keep it.';
+  }
+  logBusy='';render();
+}
+async function processNow(){
+  if(!live){logMsg='Connect a server first, then this hands the day over.';render();return}
+  try{await api('/notes/process-now',{method:'POST',body:'{}'});logMsg='Handed over. The next run picks it up.';}
+  catch(e){logMsg='Could not ask for it: '+String(e.message||e)}
+  render();
+}
+const localTime=iso=>{try{return new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(iso))}catch(e){return iso}};
 
 /* ---- settings ---- */
 function settings(){
@@ -398,6 +498,10 @@ function settings(){
   </div>
   </div>`}
 async function saveCfg(){
+  if(connecting)return;connecting=true;
+  try{await doSave()}finally{connecting=false}
+}
+async function doSave(){
   const u=normalizeUrl($('#su')?$('#su').value:draft.url),t=($('#st')?$('#st').value:draft.token).trim();
   draft.url=u;draft.token=t;
   if(!u){checks=[{k:'bad',n:'Enter the server address first',d:'The Railway domain for your backend service.'}];render();return}
@@ -414,7 +518,12 @@ function forgetServer(){
   draft={url:'',token:'',show:false};checks=[];live=false;liveErr='';
   boot();
 }
-function render(){const v={home,issue,recall,today,evening,mail,files,jarvis,settings}[view];$('#app').innerHTML=v()}
+function render(){
+  const v={home,issue,recall,today,evening,mail,files,jarvis,settings,log:logView}[view];
+  const jot=view==='log'?'':'<button type="button" class="jot" onclick="go(\'log\')">Note</button>';
+  $('#app').innerHTML=v()+jot;
+  paintVoice();
+}
 async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;await loadLive();render()}
 boot();
 </script></body></html>

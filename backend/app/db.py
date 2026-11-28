@@ -12,6 +12,9 @@ COLLECTIONS = (
     "devices",
     "summaries",
     "day_plans",
+    "skips",
+    "notes",
+    "day_log",
 )
 
 _client: AsyncMongoClient | None = None
@@ -38,6 +41,9 @@ async def ensure_indexes(db: AsyncDatabase) -> None:
     await db.devices.create_index("token", unique=True)
     await db.day_plans.create_index("date", unique=True)
     await db.summaries.create_index("date", unique=True)
+    await db.skips.create_index("date")
+    await db.notes.create_index([("date", 1), ("at", 1)])
+    await db.day_log.create_index("date", unique=True)
 
 
 async def close_client() -> None:

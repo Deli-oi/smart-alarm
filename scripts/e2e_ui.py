@@ -121,6 +121,47 @@ async def main() -> int:
         await pg.wait_for_timeout(300)
         check("empty files screen explains itself", "Nothing recent" in await pg.inner_text("#app"))
 
+        # --- the rundown must not stack when tapped twice
+        print("voice")
+        speaks: list[str] = []
+        pg.on("request", lambda r: speaks.append(r.url) if "/jarvis/speak" in r.url else None)
+        await pg.evaluate("unlocked=true;go('today')")
+        await pg.wait_for_timeout(300)
+        btn = pg.locator("[data-voice]")
+        await btn.click()
+        await btn.click()  # the double tap that used to play it twice, over itself
+        await pg.wait_for_timeout(1200)
+        check("two taps make one request", len(speaks) <= 1, f"{len(speaks)} requests")
+        check("voice state is not stuck", await pg.evaluate("voiceState") in ("", "loading", "playing"))
+
+        # --- the day log
+        print("day log")
+        await pg.evaluate("go('log')")
+        await pg.wait_for_timeout(300)
+        await pg.fill("#jt", "move the gym to six and draft a yes to Alyssa")
+        posts: list[str] = []
+        pg.on("request", lambda r: posts.append(r.url) if r.url.endswith("/notes") and r.method == "POST" else None)
+        await pg.click("#jsave")
+        await pg.click("#jsave")  # same guard, different button
+        await pg.wait_for_timeout(1500)
+        check("one note per tap", len(posts) == 1, f"{len(posts)} posts")
+        txt = await pg.inner_text("#app")
+        check("the note is listed", "move the gym to six" in txt, txt[:200])
+
+        await pg.reload()
+        await pg.wait_for_timeout(2500)
+        await pg.evaluate("go('log')")
+        await pg.wait_for_timeout(400)
+        check("the note survives a reload", "move the gym to six" in await pg.inner_text("#app"))
+
+        await pg.click("text=Send it to Claude now")
+        await pg.wait_for_timeout(900)
+        check("handing it over is confirmed", "Handed over" in await pg.inner_text("#app"))
+
+        await pg.evaluate("go('home')")
+        await pg.wait_for_timeout(300)
+        check("the note button is on every screen", await pg.locator(".jot").count() == 1)
+
         # --- forgetting the server goes back to samples
         await pg.evaluate("go('settings')")
         await pg.wait_for_timeout(300)

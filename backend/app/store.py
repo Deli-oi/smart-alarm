@@ -8,7 +8,7 @@ from typing import Protocol
 
 from pymongo.asynchronous.database import AsyncDatabase
 
-from .models import Issue, Task
+from .models import Issue, Note, Task
 
 
 def _now() -> str:
@@ -31,6 +31,10 @@ class Store(Protocol):
     async def save_day(self, day: str, plan: dict) -> None: ...
     async def record_skip(self, day: str, reason: str) -> None: ...
     async def list_skips(self, day: str) -> list[dict]: ...
+    async def add_note(self, day: str, note: Note) -> None: ...
+    async def list_notes(self, day: str) -> list[Note]: ...
+    async def set_processing(self, day: str, requested: bool) -> None: ...
+    async def processing_requested(self, day: str) -> bool: ...
 
 
 class MongoStore:
@@ -55,6 +59,24 @@ class MongoStore:
 
     async def list_skips(self, day: str) -> list[dict]:
         return [d async for d in self.db.skips.find({"date": day}, {"_id": 0})]
+
+    async def add_note(self, day: str, note: Note) -> None:
+        await self.db.notes.insert_one({"date": day, **note.model_dump()})
+
+    async def list_notes(self, day: str) -> list[Note]:
+        docs = [d async for d in self.db.notes.find({"date": day}, {"_id": 0, "date": 0}).sort("at", 1)]
+        return [Note(**d) for d in docs]
+
+    async def set_processing(self, day: str, requested: bool) -> None:
+        await self.db.day_log.update_one(
+            {"date": day},
+            {"$set": {"process_requested": requested, "requested_at": _now() if requested else ""}},
+            upsert=True,
+        )
+
+    async def processing_requested(self, day: str) -> bool:
+        doc = await self.db.day_log.find_one({"date": day}, {"_id": 0})
+        return bool(doc and doc.get("process_requested"))
 
     async def get_card(self, card_id: str) -> dict | None:
         doc = await self.db.quiz_cards.find_one({"_id": card_id})
@@ -99,6 +121,8 @@ class InMemoryStore:
         self.summaries: dict[str, str] = {}
         self.days: dict[str, dict] = {}
         self.skips: list[dict] = []
+        self.notes: list[tuple[str, Note]] = []
+        self.processing: set[str] = set()
 
     async def save_issue(self, issue: Issue) -> None:
         self.issues[issue.date] = issue
@@ -117,6 +141,18 @@ class InMemoryStore:
 
     async def list_skips(self, day: str) -> list[dict]:
         return [s for s in self.skips if s["date"] == day]
+
+    async def add_note(self, day: str, note: Note) -> None:
+        self.notes.append((day, note))
+
+    async def list_notes(self, day: str) -> list[Note]:
+        return sorted([n for d, n in self.notes if d == day], key=lambda n: n.at)
+
+    async def set_processing(self, day: str, requested: bool) -> None:
+        self.processing.add(day) if requested else self.processing.discard(day)
+
+    async def processing_requested(self, day: str) -> bool:
+        return day in self.processing
 
     async def get_card(self, card_id: str) -> dict | None:
         c = self.cards.get(card_id)
