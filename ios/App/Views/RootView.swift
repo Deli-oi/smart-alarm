@@ -51,7 +51,8 @@ struct HomeView: View {
                     }
                     if !alarmStatus.isEmpty { Text(alarmStatus).foregroundStyle(.secondary) }
                 }
-                Section("Server") {
+                Section(header: Text("Server"),
+                        footer: Text("The same API_TOKEN you set in Railway. It stays on this phone.")) {
                     // A phone keyboard will capitalise and autocorrect an address into nonsense
                     // unless every one of these is turned off.
                     TextField("your-backend.up.railway.app", text: $model.serverURL)
@@ -65,8 +66,6 @@ struct HomeView: View {
                         .autocorrectionDisabled()
                     Button("Save and connect") { Task { await model.loadIssue() } }
                         .disabled(model.serverURL.isEmpty || model.token.isEmpty)
-                } footer: {
-                    Text("The same API_TOKEN you set in Railway. It stays on this phone.")
                 }
             }
             .navigationTitle("Smart Alarm")
