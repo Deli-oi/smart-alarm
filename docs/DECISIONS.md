@@ -16,6 +16,23 @@ on the single 10:30 run for now rather than spend that.
 So the flag is best read as "he wanted this sooner", not as a trigger. If an agent later adds a
 poller, update this entry and `docs/AUTOMATION.md` together, and say what the usage costs.
 
+## Sixty seconds of breathing before the issue
+
+*28 November 2026.* Tapping Morning Issue goes to a wake step first: stand up, curtains, sixty
+seconds of paced breathing. Then the reading.
+
+This is the only countermeasure in the literature with support inside the first few minutes of
+waking; caffeine is better overall but its effect is delayed, and light is weaker than folklore
+claims. It is skippable on purpose. A gate he resents is a gate he stops using, and the recall
+gate is already the hard thing in this morning. `docs/RESEARCH.md` has the sources.
+
+## The theme follows the phone
+
+*28 November 2026.* A cream page at 7:00 in a dark bedroom is punishing, and the evidence that
+morning screen light buys alertness is weak, so there is nothing to trade away by going dark. The
+app now follows `prefers-color-scheme` rather than forcing either one: claret becomes a fill-only
+colour on dark, where it has no contrast as text, and brass carries the interactive labels.
+
 ## The lock is built but switched off
 
 *28 November 2026.* `ENFORCE_GATE` makes the recall gate real: with it on, `/day` and

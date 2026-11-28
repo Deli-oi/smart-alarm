@@ -80,6 +80,9 @@ async def main() -> int:
 
         await pg.click("text=Morning Issue")
         await pg.wait_for_timeout(300)
+        check("the wake step comes first", "Stand up" in await pg.inner_text("#app"))
+        await pg.click("text=I'm already up")
+        await pg.wait_for_timeout(300)
         check("issue renders articles", "Antikythera" in await pg.inner_text("#app"))
 
         await pg.evaluate("readDone=true;go('recall')")
@@ -199,6 +202,16 @@ async def main() -> int:
         await pg.click("text=Forget this server")
         await pg.wait_for_timeout(800)
         check("forget returns to sample content", "Not connected" in await pg.inner_text("#app"))
+
+        # --- the dark theme has to be legible, not just present
+        dark = await b.new_page(viewport={"width": 430, "height": 900}, color_scheme="dark")
+        await dark.goto(URL)
+        await dark.wait_for_timeout(600)
+        bg = await dark.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()")
+        ink = await dark.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()")
+        check("dark theme applies", bg == "#15120d" and ink == "#ece3d2", f"{bg} / {ink}")
+        await dark.screenshot(path="/tmp/ui_dark.png")
+        await dark.close()
 
         await pg.screenshot(path="/tmp/ui_settings.png", full_page=True)
         check("no script errors", not errors, "; ".join(errors[:3]))

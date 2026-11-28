@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f6f0e3">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f0e3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0b08" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -16,6 +17,22 @@
   --paper:#f6f0e3;--card:#fbf7ee;--ink:#1d1a16;--mute:#746a5a;--rule:#d9cdb6;
   --oxblood:#6b1d2a;--brass:#8a6b2c;--ok:#2a5436;--warn:#8a5a12;
   --press:#efe5cf;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --paper:#15120d;--card:#1d1812;--ink:#ece3d2;--mute:#a2947d;--rule:#3a3129;
+    --oxblood:#8e2c3b;--brass:#c6a35a;--ok:#6f9f78;--warn:#d0a24a;--press:#272017;
+  }
+  html{color-scheme:dark}
+  html,body{background:#0d0b08}
+  /* On dark, the claret is a fill, never text: it has no contrast as a label. */
+  .bar button,.cta.ghost,.inrow button,.row .t small{color:var(--brass)}
+  .cta{color:#f6efdf}
+  .cta.ghost:hover{background:#2a211c}
+  .opt[aria-pressed=true]{background:#2c1f21;border-color:var(--brass)}
+  .badge{border-color:var(--brass);color:var(--brass)}
+  .checks .bad .m,.err{color:#e0808f}
+  .field input,.ta{background:#120f0b;color:var(--ink)}
 }
 *{box-sizing:border-box}
 html{color-scheme:light;-webkit-text-size-adjust:100%}
@@ -375,7 +392,7 @@ function home(){
   <h1>Wake-Up</h1><p class="sub">${esc(DATA.date)}</p>
   ${liveErr?`<p class="sub" style="color:var(--warn)">${esc(liveErr)}</p>`:''}
   <h2>Pinned</h2><div class="list">
-  <button type="button" class="row" onclick="go('issue')"><div class="t"><span>Morning Issue</span><small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)}, three articles, fifteen minutes</div></button>
+  <button type="button" class="row" onclick="go(readDone?'issue':'wake')"><div class="t"><span>Morning Issue</span><small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)}, three articles, fifteen minutes</div></button>
   <button type="button" class="row" onclick="go('recall')"><div class="t"><span>Recall</span><small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions, two tries, 70% opens the day</div></button>
   <button type="button" class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?(ev.length?ev.length+' events, breakfast block protected':'Calendar clear, breakfast block protected'):'Locked until recall is passed'}</div></button>
   <button type="button" class="row" onclick="go('evening')"><div class="t"><span>Evening Check</span><small>10:30 pm</small></div><div class="p">${DATA.summary?esc(DATA.summary.split('\n')[0]):left+' left over, done detected from your sources'}</div></button>
@@ -385,6 +402,37 @@ function home(){
   <button type="button" class="row" onclick="go('log')"><div class="t"><span>Day log</span><small>${(DATA.notes||[]).length}</small></div><div class="p">${esc((DATA.notes||[])[0]?(DATA.notes||[]).slice(-1)[0].text:'Anything you want tonight to act on')}</div></button>
   <button type="button" class="row" onclick="go('files')"><div class="t"><span>Files</span><small>${files.length}</small></div><div class="p">${esc(files[0]?files[0].title:'Nothing recent')}</div></button></div>
   </div>`}
+/* Nothing reliably clears sleep inertia inside the first fifteen minutes, and brief
+   breathing and muscular work is the best-supported reactive countermeasure there is. So the
+   issue opens with sixty seconds of it rather than straight into reading. Skippable: a gate he
+   resents is a gate he stops using. See docs/RESEARCH.md. */
+let wakeLeft=0,wakeTimer=null;
+const BREATH=[['Breathe in',4],['Hold',4],['Out, slowly',6]];
+function wake(){
+  return bar()+`<div class="wrap note center">
+  <h1>Stand up</h1>
+  <p class="sub">Feet on the floor, curtains open. Sixty seconds of this clears the fog faster than reading does.</p>
+  <div class="big" id="wkc" aria-live="polite">${wakeLeft?wakeLeft:60}</div>
+  <p class="q" id="wkp">${wakeLeft?'':'Tap to start'}</p>
+  <button type="button" class="cta" id="wkb" onclick="startWake()">Start</button>
+  <button type="button" class="cta ghost" onclick="stopWake();go('issue')">I'm already up</button>
+  </div>`}
+function stopWake(){clearInterval(wakeTimer);wakeTimer=null;wakeLeft=0}
+function startWake(){
+  if(wakeTimer)return;
+  wakeLeft=60;const b=$('#wkb');if(b){b.disabled=true;b.textContent='Keep going'}
+  let i=0,phase=0;
+  const tick=()=>{
+    const c=$('#wkc'),p=$('#wkp');
+    if(!c){stopWake();return}
+    c.textContent=wakeLeft;
+    const step=BREATH[phase%BREATH.length];
+    p.textContent=step[0];
+    if(++i>=step[1]){i=0;phase++}
+    if(--wakeLeft<=0){stopWake();go('issue')}
+  };
+  tick();wakeTimer=setInterval(tick,1000);
+}
 function issue(){
   const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');
   return bar()+`<div class="wrap note"><p class="kind">Morning issue</p><h1 style="font-size:30px">${esc(DATA.date)}</h1>
@@ -580,7 +628,7 @@ function forgetServer(){
   boot();
 }
 function render(){
-  const v={home,issue,recall,today,evening,mail,files,jarvis,settings,log:logView}[view];
+  const v={home,wake,issue,recall,today,evening,mail,files,jarvis,settings,log:logView}[view];
   const jot=view==='log'?'':'<button type="button" class="jot" onclick="go(\'log\')">Note</button>';
   $('#app').innerHTML=v()+jot;
   paintVoice();
