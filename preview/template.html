@@ -285,6 +285,29 @@ function rundown(){
   s+=(DATA.mail&&DATA.mail[0])?`Top of your inbox: ${DATA.mail[0].subject}. `:'';
   s+='Your breakfast block is protected from seven thirty five. That is everything.';return s}
 let aud=null,voiceState='',voiceUrl='',skipping=false,submitting=false,connecting=false;
+let fishPrefetched=false,fishPromise=null;
+
+/* EARLY FISH LOADING BASED ON ONE STEP BEFORE
+   ------------------------------------------
+   Fish takes about three seconds to generate the rundown, which is dead air if it starts
+   when he taps Play. So it starts one step before the place it is needed: reaching the
+   SECOND TO LAST recall question begins the fetch in the background, and by the time the
+   day opens the audio is already in hand.
+
+   The rule, for anyone changing this later: the trigger is one step before the need, not a
+   fixed question number. If the flow gains or loses a step, move the call to whatever is now
+   one step before Today, and keep this comment honest.
+
+   It must stay silent (no button state), at most once a morning, and free to fail: a failed
+   prefetch leaves speak() to fetch normally. It does spend one Fish generation on a morning
+   where he never taps Play, which is the price of the audio being instant when he does. */
+function earlyFishLoad(){
+  if(fishPrefetched||!live||voiceUrl)return;
+  fishPrefetched=true;
+  fishPromise=api('/jarvis/speak',null,30000).then(r=>r.blob())
+    .then(b=>{voiceUrl=URL.createObjectURL(b);return voiceUrl})
+    .catch(()=>{fishPromise=null;return ''});
+}
 /* One tap starts it, a second stops it. The guard is set before the first await, or two
    quick taps both get past it and you hear the rundown twice, over itself. */
 function paintVoice(){
@@ -321,6 +344,11 @@ async function speak(){
   };
   try{
     if(voiceUrl){await play(voiceUrl);return}      // already fetched once this session
+    if(fishPromise){                               // the prefetch is still running: wait on it
+      const u=await fishPromise;
+      if(voiceState!=='loading')return;
+      if(u){await play(u);return}
+    }
     if(live){
       const b=await api('/jarvis/speak',null,30000).then(r=>r.blob());
       if(voiceState!=='loading')return;
@@ -384,6 +412,7 @@ function recall(){
     return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length}. Seventy percent opens the day.</p>
     ${tries<1?`<button type="button" class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="emergencySkip()">Emergency skip, which is recorded</button>`}</div>`}
   const q=DATA.quiz[qi];
+  if(qi===DATA.quiz.length-2)earlyFishLoad();   // see EARLY FISH LOADING BASED ON ONE STEP BEFORE
   return bar(null)+`<div class="wrap"><p class="kind">Question ${qi+1} of ${DATA.quiz.length}, attempt ${tries+1} of 2</p><p class="q">${esc(q.q)}</p>
   ${q.o.map((o,i)=>`<button type="button" class="opt" aria-pressed="${sel===i}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
   <button type="button" class="cta" ${sel===null?'disabled':''} onclick="answers[qi]=sel;qi++;sel=null;render()">${qi===DATA.quiz.length-1?'Finish':'Next question'}</button></div>`}
@@ -524,6 +553,7 @@ function render(){
   $('#app').innerHTML=v()+jot;
   paintVoice();
 }
-async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;await loadLive();render()}
+async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;
+  fishPrefetched=false;fishPromise=null;voiceUrl='';stopSpeech();await loadLive();render()}
 boot();
 </script></body></html>

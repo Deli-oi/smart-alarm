@@ -121,18 +121,49 @@ async def main() -> int:
         await pg.wait_for_timeout(300)
         check("empty files screen explains itself", "Nothing recent" in await pg.inner_text("#app"))
 
-        # --- the rundown must not stack when tapped twice
+        # --- early fish loading based on one step before
         print("voice")
         speaks: list[str] = []
         pg.on("request", lambda r: speaks.append(r.url) if "/jarvis/speak" in r.url else None)
+        await pg.evaluate("boot()")
+        await pg.wait_for_timeout(2000)
+        await pg.evaluate("readDone=true;go('recall')")
+        await pg.wait_for_timeout(300)
+        total = await pg.evaluate("DATA.quiz.length")
+        for _ in range(total - 3):  # stop one short of the second to last question
+            await pg.click(".opt:nth-of-type(1)")
+            await pg.click(".cta")
+            await pg.wait_for_timeout(60)
+        check("nothing fetched before the trigger", len(speaks) == 0, f"{len(speaks)} early")
+
+        await pg.click(".opt:nth-of-type(1)")
+        await pg.click(".cta")  # lands on the second to last question
+        await pg.wait_for_timeout(1500)
+        check("second to last question starts the fetch", len(speaks) == 1, f"{len(speaks)} requests")
+        check("the fetch is silent", await pg.evaluate("voiceState") == "")
+        check("the audio is in hand", bool(await pg.evaluate("voiceUrl")))
+
         await pg.evaluate("unlocked=true;go('today')")
         await pg.wait_for_timeout(300)
+        mark = len(speaks)
+        await pg.locator("[data-voice]").click()
+        await pg.wait_for_timeout(1000)
+        check("playing reuses the prefetch", len(speaks) == mark, f"{len(speaks) - mark} extra")
+        await pg.evaluate("stopSpeech()")
+
+        # --- and with nothing prefetched, two taps must still make one request
+        await pg.evaluate("boot()")
+        await pg.wait_for_timeout(2000)
+        await pg.evaluate("unlocked=true;go('today')")
+        await pg.wait_for_timeout(300)
+        mark = len(speaks)
         btn = pg.locator("[data-voice]")
         await btn.click()
         await btn.click()  # the double tap that used to play it twice, over itself
-        await pg.wait_for_timeout(1200)
-        check("two taps make one request", len(speaks) <= 1, f"{len(speaks)} requests")
+        await pg.wait_for_timeout(1500)
+        check("two taps make one request", len(speaks) - mark <= 1, f"{len(speaks) - mark} requests")
         check("voice state is not stuck", await pg.evaluate("voiceState") in ("", "loading", "playing"))
+        await pg.evaluate("stopSpeech()")
 
         # --- the day log
         print("day log")
