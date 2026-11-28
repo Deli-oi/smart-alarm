@@ -12,7 +12,7 @@ from .briefing import build_briefing
 from .config import get_settings
 from .db import close_client, ensure_indexes, get_db
 from .llm import fish_speech
-from .models import GateResponse, Issue, PublicQuestion, SubmitAnswers, Task, TaskUpdate
+from .models import GateResponse, Issue, PublicQuestion, SkipRequest, SubmitAnswers, Task, TaskUpdate
 from .schedule import make_scheduler
 from .store import InMemoryStore, MongoStore, Store
 
@@ -107,6 +107,20 @@ async def quiz_submit(body: SubmitAnswers, store: Store = Depends(get_store)) ->
     value = recall.score(outcomes)
     await store.record_attempt(day, value, passed=result == "unlocked")
     return GateResponse(result=result, score=value, tries_used=tries + 1)
+
+
+@app.post("/quiz/skip", dependencies=auth)
+async def quiz_skip(body: SkipRequest, store: Store = Depends(get_store)) -> dict:
+    """The emergency skip. It always opens the day, and it is always on the record:
+    the point of the gate is that going round it costs something to look at later."""
+    day = today()
+    await store.record_skip(day, body.reason)
+    return {"unlocked": True, "skips_today": len(await store.list_skips(day))}
+
+
+@app.get("/quiz/skips", dependencies=auth)
+async def quiz_skips(store: Store = Depends(get_store)) -> dict:
+    return {"skips": await store.list_skips(today())}
 
 
 @app.get("/tasks/today", dependencies=auth)

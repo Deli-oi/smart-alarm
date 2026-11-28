@@ -315,12 +315,12 @@ function recall(){
     if(r.result==='unlocked'){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">The day is open.</p><button type="button" class="cta" onclick="go('today')">Open Today</button></div>`}
     return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">Seventy percent opens the day.</p>
     ${r.error?`<p class="err">${esc(r.error)}</p>`:''}
-    ${r.result==='retry'?`<button type="button" class="cta" onclick="result=null;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+    ${r.result==='retry'?`<button type="button" class="cta" onclick="result=null;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="emergencySkip()">Emergency skip, which is recorded</button>`}</div>`}
   if(qi>=DATA.quiz.length){
     const n=answers.filter((a,i)=>a===DATA.quiz[i].a).length,pct=Math.round(n/DATA.quiz.length*100),pass=pct>=70;
     if(pass){unlocked=true;return bar(null)+`<div class="wrap center"><div class="big">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length} correct. The day is open.</p><button type="button" class="cta" onclick="go('today')">Open Today</button></div>`}
     return bar(null)+`<div class="wrap center"><div class="big" style="color:var(--mute)">${pct}%</div><p class="sub">${n} of ${DATA.quiz.length}. Seventy percent opens the day.</p>
-    ${tries<1?`<button type="button" class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="unlocked=true;go('today')">Emergency skip (logged)</button>`}</div>`}
+    ${tries<1?`<button type="button" class="cta" onclick="tries++;qi=0;answers=[];go('recall')">Second attempt</button>`:`<p class="sub">Two attempts used.</p><button type="button" class="cta ghost" onclick="emergencySkip()">Emergency skip, which is recorded</button>`}</div>`}
   const q=DATA.quiz[qi];
   return bar(null)+`<div class="wrap"><p class="kind">Question ${qi+1} of ${DATA.quiz.length}, attempt ${tries+1} of 2</p><p class="q">${esc(q.q)}</p>
   ${q.o.map((o,i)=>`<button type="button" class="opt" aria-pressed="${sel===i}" onclick="sel=${i};render()">${esc(o)}</button>`).join('')}
@@ -345,6 +345,12 @@ function files(){
 function jarvis(){return bar()+`<div class="wrap note"><h1>Jarvis</h1><p class="sub">Never speaks on its own.</p><p>${esc(rundown())}</p>
   <button type="button" class="cta" onclick="speak()">Play rundown</button>
   <button type="button" class="cta ghost" onclick="stopSpeech()">Stop</button></div>`}
+/* The gate is meant to be skippable. It is also meant to cost something to look back on,
+   so every skip is written to the server before the day opens. */
+async function emergencySkip(){
+  if(live){try{await api('/quiz/skip',{method:'POST',body:JSON.stringify({reason:'skipped from the app'})})}catch(e){}}
+  unlocked=true;go('today');
+}
 function stopSpeech(){try{if(aud){aud.pause();aud=null}speechSynthesis.cancel()}catch(e){}}
 
 /* ---- settings ---- */

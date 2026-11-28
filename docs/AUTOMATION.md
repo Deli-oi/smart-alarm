@@ -20,3 +20,35 @@ Check a payload before trusting a new prompt change:
 Not yet confirmed: that scheduled runs can reach every connector (MongoDB, Gmail, Calendar, Drive, GitHub).
 The first two runs will show; read their reports. Tonight's evening run (10:27 pm) is the first test: it has two
 test tasks for 2026-11-27.
+
+## Who owns the evening check
+
+Two schedulers can write the evening result, so the order matters:
+
+| When | Who | Sources |
+|---|---|---|
+| 22:20 | The backend's own job | GitHub, and IMAP or Drive if ever configured |
+| 22:27 | The Claude-account scheduled task | Gmail sent, Drive, Calendar, Claude chats |
+
+The backend runs first and only marks tasks done. The automation runs last, sees those marks,
+and writes the summary text. The backend job returns immediately when no source is configured,
+because a run with no evidence marks nothing and would only overwrite the automation's summary
+with an emptier one. That is exactly what happened on the first night, 27 November: the
+automation wrote its summary at 22:28 and the backend replaced it at 22:30 with
+`2 left: ... 0 detected done.`
+
+### Turning on commit detection
+
+Nothing detects GitHub work yet, because the Claude account has no GitHub connector and the
+backend has no token. The backend already has the adapter. To switch it on:
+
+1. GitHub, Settings, Developer settings, Fine-grained tokens, Generate new token.
+2. Repository access: only `Deli-oi/smart-alarm` (add others later if you want them counted).
+3. Permissions: Contents **read-only**. Nothing else.
+4. In Railway, add `GITHUB_USER=Deli-oi` and `GITHUB_TOKEN=<the token>`.
+
+From the next night, commits count as evidence that a task is done.
+
+Apple Notes and Outlook are in the original list of sources and are not covered. Outlook has no
+connector on the account; Apple Notes is not reachable from a cloud session at all, and would
+need the desktop app connected.

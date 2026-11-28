@@ -57,6 +57,12 @@ class SubmitAnswers(BaseModel):
     answers: dict[str, int]  # question id -> chosen index
 
 
+class SkipRequest(BaseModel):
+    """Why the gate was skipped. Free text, kept short, written to the record."""
+
+    reason: str = Field(default="", max_length=200)
+
+
 class GateResponse(BaseModel):
     result: Literal["unlocked", "retry", "locked"]
     score: float

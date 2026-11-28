@@ -3,11 +3,16 @@
 Tests use InMemoryStore so nothing needs a live database.
 """
 
+from datetime import datetime, timezone
 from typing import Protocol
 
 from pymongo.asynchronous.database import AsyncDatabase
 
 from .models import Issue, Task
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 class Store(Protocol):
@@ -24,6 +29,8 @@ class Store(Protocol):
     async def get_summary(self, day: str) -> str | None: ...
     async def get_day(self, day: str) -> dict | None: ...
     async def save_day(self, day: str, plan: dict) -> None: ...
+    async def record_skip(self, day: str, reason: str) -> None: ...
+    async def list_skips(self, day: str) -> list[dict]: ...
 
 
 class MongoStore:
@@ -42,6 +49,12 @@ class MongoStore:
 
     async def record_attempt(self, day: str, score: float, passed: bool) -> None:
         await self.db.quiz_attempts.insert_one({"date": day, "score": score, "passed": passed})
+
+    async def record_skip(self, day: str, reason: str) -> None:
+        await self.db.skips.insert_one({"date": day, "reason": reason, "at": _now()})
+
+    async def list_skips(self, day: str) -> list[dict]:
+        return [d async for d in self.db.skips.find({"date": day}, {"_id": 0})]
 
     async def get_card(self, card_id: str) -> dict | None:
         doc = await self.db.quiz_cards.find_one({"_id": card_id})
@@ -85,6 +98,7 @@ class InMemoryStore:
         self.tasks: dict[str, Task] = {}
         self.summaries: dict[str, str] = {}
         self.days: dict[str, dict] = {}
+        self.skips: list[dict] = []
 
     async def save_issue(self, issue: Issue) -> None:
         self.issues[issue.date] = issue
@@ -97,6 +111,12 @@ class InMemoryStore:
 
     async def record_attempt(self, day: str, score: float, passed: bool) -> None:
         self.attempts.append({"date": day, "score": score, "passed": passed})
+
+    async def record_skip(self, day: str, reason: str) -> None:
+        self.skips.append({"date": day, "reason": reason, "at": _now()})
+
+    async def list_skips(self, day: str) -> list[dict]:
+        return [s for s in self.skips if s["date"] == day]
 
     async def get_card(self, card_id: str) -> dict | None:
         c = self.cards.get(card_id)

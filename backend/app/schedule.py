@@ -41,7 +41,7 @@ async def build_evening_check() -> None:
     from .sources.github import GitHubAdapter
 
     s = get_settings()
-    adapters = []
+    adapters: list = []
     if s.github_user and s.github_token:
         adapters.append(GitHubAdapter(s.github_user, s.github_token))
     if s.gmail_user and s.gmail_app_password:
@@ -58,6 +58,11 @@ async def build_evening_check() -> None:
             return await tokens.access_token(s.nango_drive_integration, s.nango_drive_connection)
 
         adapters.append(DriveAdapter(drive_token))
+    if not adapters:
+        # With no source configured this job has no evidence, so it would mark nothing done and
+        # then overwrite the summary the Claude-account automation wrote three minutes earlier.
+        # Silence is the correct behaviour: see docs/AUTOMATION.md on who owns the evening check.
+        return
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
     await run_evening_check(today(), since, MongoStore(get_db()), adapters)
 
@@ -71,7 +76,10 @@ def make_scheduler() -> AsyncIOScheduler:
     scheduler.add_job(
         build_daily_issue, "cron", hour=6, minute=0, id="daily_issue", replace_existing=True
     )
+    # 22:20, deliberately before the Claude-account automation at 22:27: this job contributes
+    # the sources that need credentials (GitHub), and the automation, running last, sees those
+    # marks and has the final say on the summary text.
     scheduler.add_job(
-        build_evening_check, "cron", hour=22, minute=30, id="evening_check", replace_existing=True
+        build_evening_check, "cron", hour=22, minute=20, id="evening_check", replace_existing=True
     )
     return scheduler

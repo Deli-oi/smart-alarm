@@ -68,6 +68,31 @@ machine-made rather than chosen, and those are gone:
 - `RootView.swift` — the server field had no `keyboardType(.URL)` and the token field no autocapitalisation rules, the same phone problem as the web settings. Fixed, with the save button disabled until both fields are filled.
 - **Open**: the iOS app has no equivalent of the connection checklist. It shows one `model.message` string.
 
+## Spec check, done afterwards against the original requirements
+
+- **Emergency skip was never logged.** The requirement said the skip is logged; the button said
+  "(logged)"; nothing was written anywhere. Two code comments deferred it to "a later phase".
+  Now `POST /quiz/skip` records the date, reason and timestamp, `GET /quiz/skips` reads them back,
+  and the button calls it before the day opens.
+- **Two schedulers were writing the evening result**, and the backend's silently overwrote the
+  automation's. Fixed and documented in `docs/AUTOMATION.md`.
+- **Nothing detects GitHub or Claude Code work.** The account has no GitHub connector, so the
+  scheduled task cannot see commits. The backend's adapter can, with a read-only token; the steps
+  are in `docs/AUTOMATION.md`.
+- **Apple Notes and Outlook** from the original source list are not covered and cannot be from a
+  cloud session.
+- **The issues seeded for 27 and 28 November are about 820 words**, which is four or five minutes,
+  not the fifteen the brief asks for. The builder and the automation prompt both target 2,750
+  words, so the 5:37 run should be the right length. The seeded pair are short.
+- **The Today lock is client-side.** Passing recall flips a variable in the app; `/day` and
+  `/tasks/today` answer whoever holds the token. It stops you, not an attacker, which may be all
+  it needs to do.
+- **The breakfast block is drawn, not defended.** 7:35 to 8:00 appears in the timeline and nothing
+  writes it to the calendar or refuses meetings inside it.
+- **The USCCB parser has still never run against the live feed.** The sandbox cannot reach
+  bible.usccb.org, so both seeded issues carry hand-written summaries, and the 27 November one is
+  an explicit placeholder. Tomorrow at 5:37 is the first real test.
+
 ## Open
 
 - Contrast of brass (`#8a6b2c`) on cream passes AA for text at these sizes, but the hairline rules are decorative only; do not use them to carry meaning.
