@@ -145,7 +145,7 @@ async def evening_summary(store: Store = Depends(get_store)) -> dict:
 
 
 @app.get("/day", dependencies=auth)
-async def day_plan() -> dict:
+async def day_plan(store: Store = Depends(get_store)) -> dict:
     """Calendar events (with overlaps flagged) and the latest inbox subjects."""
     from datetime import date as _date
 
@@ -161,13 +161,19 @@ async def day_plan() -> dict:
         except Exception as e:  # a dead link should not hide the rest of the day
             out["errors"].append(f"calendar: {type(e).__name__}")
     else:
-        out["errors"].append("calendar: ICS_URL not set")
+        stored = await store.get_day(today())  # written by the daily automation
+        if stored:
+            out["events"] = stored.get("events", [])
+            out["mail"] = stored.get("mail", [])
+            out["source"] = "automation"
+        else:
+            out["errors"].append("calendar: no ICS_URL and no day plan stored for today")
     if cfg.gmail_user and cfg.gmail_app_password:
         try:
             out["mail"] = [m.model_dump() for m in await recent_mail(cfg.gmail_user, cfg.gmail_app_password)]
         except Exception as e:
             out["errors"].append(f"mail: {type(e).__name__}")
-    else:
+    elif not out["mail"] and "source" not in out:
         out["errors"].append("mail: GMAIL_USER / GMAIL_APP_PASSWORD not set")
     return out
 

@@ -89,6 +89,12 @@ def test_day_reports_missing_config(monkeypatch):
     s = get_settings()
     monkeypatch.setattr(s, "ics_url", "")
     monkeypatch.setattr(s, "gmail_user", "")
-    r = TestClient(main.app).get("/day", headers=HEADERS)
+    from app.store import InMemoryStore
+
+    main.app.dependency_overrides[main.get_store] = lambda: InMemoryStore()
+    try:
+        r = TestClient(main.app).get("/day", headers=HEADERS)
+    finally:
+        main.app.dependency_overrides.clear()
     assert r.status_code == 200
     assert any("ICS_URL" in e for e in r.json()["errors"])

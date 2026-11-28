@@ -1,7 +1,7 @@
 # Progress
 
 ## Done and tested
-- Backend (36 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
+- Backend (37 tests, CI on every push): issue builder with retries, 6:00 job, recall gate (70 percent, two tries,
   FSRS cards), tasks, Jarvis briefing text, opt-in Fish Audio speech (voice set by `FISH_VOICE_ID`),
   10:30pm check with evidence matching, GitHub adapter.
 - `/day`: today's calendar (Google private iCal link, no OAuth, overlaps flagged) and inbox subjects
@@ -11,6 +11,10 @@
   (Settings: server URL and token). `scripts/e2e_ui.py` drives it in headless Chrome against a local
   backend: seeded issue, failed first attempt, passed second attempt, Today with calendar overlaps, evening tasks.
 - Swift core package (tests pass on Mac CI), including the `/day` models, and the app (compiles on Mac CI).
+
+## Automation (2026-11-28)
+- Daily issue and evening check run as scheduled tasks on the Claude account and write to Atlas (`docs/AUTOMATION.md`).
+  A real issue, day plan and two tasks for 2026-11-28 were inserted by hand through the same path.
 
 ## Research results (2026-11-27)
 - Web search tool: `web_search_20250305` is a current, documented tool type (newer versions add dynamic filtering). Keep it.

@@ -16,6 +16,9 @@ async def build_daily_issue() -> None:
     """6:00 job: readings, three articles, critical-issue check, recall questions."""
     from .main import today  # local import avoids a cycle
 
+    if not get_settings().anthropic_api_key:
+        return  # no API key: the Claude-account automation writes the issue instead (docs/AUTOMATION.md)
+
     from datetime import date
 
     from .sources.usccb import fetch_readings_text

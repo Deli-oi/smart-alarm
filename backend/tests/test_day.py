@@ -76,3 +76,24 @@ async def test_sent_adapter_returns_recent_sent_mail():
     recs = await a.fetch_since("2026-11-26T12:00:00Z")
     assert [r.text for r in recs] == ["Re: Interview"] and recs[0].source == "gmail"
     assert await a.fetch_since("2026-11-27T12:00:00Z") == []
+
+
+async def test_day_endpoint_serves_automation_plan(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app import main
+    from app.config import get_settings
+    from app.store import InMemoryStore
+
+    s = get_settings()
+    monkeypatch.setattr(s, "ics_url", "")
+    monkeypatch.setattr(s, "gmail_user", "")
+    store = InMemoryStore()
+    await store.save_day(main.today(), {"events": [{"start": "08:00", "end": "09:00", "title": "X", "all_day": False}], "mail": [{"sender": "a", "subject": "b"}]})
+    main.app.dependency_overrides[main.get_store] = lambda: store
+    try:
+        r = TestClient(main.app).get("/day", headers={"Authorization": f"Bearer {s.api_token}"})
+    finally:
+        main.app.dependency_overrides.clear()
+    j = r.json()
+    assert j["source"] == "automation" and j["events"][0]["title"] == "X" and j["errors"] == []

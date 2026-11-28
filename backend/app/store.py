@@ -22,6 +22,8 @@ class Store(Protocol):
     async def get_task(self, task_id: str) -> Task | None: ...
     async def save_summary(self, day: str, text: str) -> None: ...
     async def get_summary(self, day: str) -> str | None: ...
+    async def get_day(self, day: str) -> dict | None: ...
+    async def save_day(self, day: str, plan: dict) -> None: ...
 
 
 class MongoStore:
@@ -67,6 +69,13 @@ class MongoStore:
         doc = await self.db.summaries.find_one({"date": day})
         return doc["text"] if doc else None
 
+    async def get_day(self, day: str) -> dict | None:
+        """Calendar and mail for a day, written by the automation (or any other writer)."""
+        return await self.db.day_plans.find_one({"date": day}, {"_id": 0})
+
+    async def save_day(self, day: str, plan: dict) -> None:
+        await self.db.day_plans.replace_one({"date": day}, {**plan, "date": day}, upsert=True)
+
 
 class InMemoryStore:
     def __init__(self):
@@ -75,6 +84,7 @@ class InMemoryStore:
         self.cards: dict[str, dict] = {}
         self.tasks: dict[str, Task] = {}
         self.summaries: dict[str, str] = {}
+        self.days: dict[str, dict] = {}
 
     async def save_issue(self, issue: Issue) -> None:
         self.issues[issue.date] = issue
@@ -109,3 +119,9 @@ class InMemoryStore:
 
     async def get_summary(self, day: str) -> str | None:
         return self.summaries.get(day)
+
+    async def get_day(self, day: str) -> dict | None:
+        return self.days.get(day)
+
+    async def save_day(self, day: str, plan: dict) -> None:
+        self.days[day] = {**plan, "date": day}
