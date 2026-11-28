@@ -286,7 +286,11 @@ async def main() -> int:
         await pg.reload()
         await pg.wait_for_timeout(1500)
         txt = await pg.inner_text("#app")
-        check("with no server at all, samples are fine", "Not showing live data" not in txt, txt[:160])
+        check("no stale live-data warning", "Not showing live data" not in txt, txt[:160])
+        check("unconnected samples are labelled", "Sample content, not your issue" in txt, txt[:200])
+        await pg.evaluate("go('issue')")
+        await pg.wait_for_timeout(300)
+        check("the label is on the issue screen too", "Sample content, not your issue" in await pg.inner_text("#app"))
 
         await pg.screenshot(path="/tmp/ui_settings.png", full_page=True)
         check("no script errors", not errors, "; ".join(errors[:3]))

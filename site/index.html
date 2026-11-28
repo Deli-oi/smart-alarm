@@ -757,7 +757,17 @@ function forgetServer(){
    every screen, and the screens whose data failed refuse to show samples at all. */
 const failed=()=>Object.entries(srcs).filter(([,v])=>v&&v!=='live');
 function banner(){
-  if(!CFG().url||!failed().length)return '';
+  /* No server saved at all. This is not an error, but the sample issue looks exactly like a
+     real one, and it has been mistaken for a real one. Say so on every screen, every time.
+     Note that a Home Screen install has its own storage: connecting in Safari does not
+     connect the installed app, and the other way round. */
+  if(!CFG().url)return `<div class="warn" role="status">
+    <strong>Sample content, not your issue.</strong>
+    <div>No server is connected in this window. If you added the app to your Home Screen,
+    that has separate storage and needs connecting on its own.</div>
+    <button type="button" onclick="go('settings')">Connect</button>
+  </div>`;
+  if(!failed().length)return '';
   const names={issue:'Today\u2019s issue',day:'The day plan',tasks:'Your tasks'};
   return `<div class="warn" role="status">
     <strong>Not showing live data.</strong>

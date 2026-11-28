@@ -54,6 +54,12 @@ exactly like a working app showing the wrong day. It now refuses: a banner names
 every screen, and the affected screens show nothing rather than samples. Samples appear only when
 no server is configured.
 
+A Home Screen install on iOS has its own storage, separate from Safari. Connecting in one does
+not connect the other, and the symptom is an app showing samples with nothing obviously wrong.
+When a report says "still a placeholder", check the Railway HTTP logs first: no requests at all
+means nothing is configured in whatever window they are using, which is different from requests
+that fail.
+
 Hold yourself to the same standard. If you seed, stub or hand-write data to make something
 demonstrable, label it in the data itself and say so in the same breath. Do not let a reader
 discover later that what they were looking at was yours.
