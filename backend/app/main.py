@@ -170,8 +170,18 @@ async def process_pending(store: Store = Depends(get_store)) -> dict:
     return {"requested": await store.processing_requested(today())}
 
 
+async def _require_gate(store: Store) -> None:
+    """The lock, when ENFORCE_GATE is on: the day does not open until recall is passed or a
+    skip is on the record. Off by default; see config."""
+    if not get_settings().enforce_gate:
+        return
+    if not await store.gate_open(today()):
+        raise HTTPException(status_code=423, detail="recall not passed yet")
+
+
 @app.get("/tasks/today", dependencies=auth)
 async def tasks_today(store: Store = Depends(get_store)) -> list[Task]:
+    await _require_gate(store)
     return await store.list_tasks(today())
 
 
@@ -217,6 +227,7 @@ async def day_plan(store: Store = Depends(get_store)) -> dict:
     """
     from datetime import date as _date
 
+    await _require_gate(store)
     cfg = get_settings()
     out: dict = {"date": today(), "events": [], "mail": [], "errors": []}
     if cfg.ics_url:

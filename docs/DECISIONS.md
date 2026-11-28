@@ -16,6 +16,16 @@ on the single 10:30 run for now rather than spend that.
 So the flag is best read as "he wanted this sooner", not as a trigger. If an agent later adds a
 poller, update this entry and `docs/AUTOMATION.md` together, and say what the usage costs.
 
+## The lock is built but switched off
+
+*28 November 2026.* `ENFORCE_GATE` makes the recall gate real: with it on, `/day` and
+`/tasks/today` answer 423 until the day's quiz is passed or a skip is on the record. It defaults
+to **off**, and the app's own lock stays cosmetic until it is turned on.
+
+The reason is asymmetry. A gate that fails open costs nothing much; a gate that falsely locks
+costs a morning, and the morning flow has run exactly once. Turn it on in Railway once a week of
+mornings has gone through cleanly.
+
 ## Early fish loading based on one step before
 
 *28 November 2026.* Fish takes about three seconds to generate the rundown. Starting that when he
@@ -65,6 +75,12 @@ The code paths still exist and are still tested, so a future deployment can turn
 they are not part of the running system.
 
 ---
+
+## The service worker fetches network first
+
+*28 November 2026.* The Home Screen install caches the page so it opens without a connection, but
+network first with the cache as fallback, not the other way round. Cache first would keep serving
+a stale app for days after a push, and this page changes far more often than it is opened.
 
 # Wanted next
 

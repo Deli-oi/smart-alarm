@@ -31,6 +31,7 @@ class Store(Protocol):
     async def save_day(self, day: str, plan: dict) -> None: ...
     async def record_skip(self, day: str, reason: str) -> None: ...
     async def list_skips(self, day: str) -> list[dict]: ...
+    async def gate_open(self, day: str) -> bool: ...
     async def add_note(self, day: str, note: Note) -> None: ...
     async def list_notes(self, day: str) -> list[Note]: ...
     async def set_processing(self, day: str, requested: bool) -> None: ...
@@ -59,6 +60,11 @@ class MongoStore:
 
     async def list_skips(self, day: str) -> list[dict]:
         return [d async for d in self.db.skips.find({"date": day}, {"_id": 0})]
+
+    async def gate_open(self, day: str) -> bool:
+        if await self.db.quiz_attempts.count_documents({"date": day, "passed": True}):
+            return True
+        return bool(await self.db.skips.count_documents({"date": day}))
 
     async def add_note(self, day: str, note: Note) -> None:
         await self.db.notes.insert_one({"date": day, **note.model_dump()})
@@ -141,6 +147,10 @@ class InMemoryStore:
 
     async def list_skips(self, day: str) -> list[dict]:
         return [s for s in self.skips if s["date"] == day]
+
+    async def gate_open(self, day: str) -> bool:
+        passed = any(a["date"] == day and a["passed"] for a in self.attempts)
+        return passed or any(s["date"] == day for s in self.skips)
 
     async def add_note(self, day: str, note: Note) -> None:
         self.notes.append((day, note))

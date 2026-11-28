@@ -3,7 +3,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f6f0e3">
 <meta name="color-scheme" content="light">
-<link rel="icon" href="data:,">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wake-Up">
 <title>Wake-Up</title>
 <style>
 :root{
@@ -250,6 +256,7 @@ async function loadLive(){
     const N=await api('/notes/today').then(r=>r.json());
     d.notes=N.map(x=>({when:localTime(x.at),text:x.text}));
   }catch(e){d.notes=[]}
+  try{d.summary=(await api('/evening/summary').then(r=>r.json())).text||''}catch(e){d.summary=''}
   if(tasks.status==='fulfilled'){
     const T=await tasks.value.json();
     d.evening=T.map(t=>({t:t.title,done:t.status==='done',
@@ -257,6 +264,7 @@ async function loadLive(){
     any=true;
   }else miss.push('tasks');
 
+  if(any){try{const n=await flushQueue();if(n)liveErr=''}catch(e){}}
   live=any;
   liveErr=any?(miss.length?'Sample content is standing in for '+miss.join(', ')+'.':''):'Nothing could be loaded from the server.';
   Object.assign(DATA,MOCK,d,{mode:any?(miss.length?'Partly live':'Live'):'Sample',files:d.files||[]});
@@ -370,7 +378,7 @@ function home(){
   <button type="button" class="row" onclick="go('issue')"><div class="t"><span>Morning Issue</span><small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)}, three articles, fifteen minutes</div></button>
   <button type="button" class="row" onclick="go('recall')"><div class="t"><span>Recall</span><small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions, two tries, 70% opens the day</div></button>
   <button type="button" class="row" onclick="go('today')"><div class="t"><span>Today${unlocked?'':LOCK}</span><small>8:00 am</small></div><div class="p">${unlocked?(ev.length?ev.length+' events, breakfast block protected':'Calendar clear, breakfast block protected'):'Locked until recall is passed'}</div></button>
-  <button type="button" class="row" onclick="go('evening')"><div class="t"><span>Evening Check</span><small>10:30 pm</small></div><div class="p">${left} left over, done detected from your sources</div></button>
+  <button type="button" class="row" onclick="go('evening')"><div class="t"><span>Evening Check</span><small>10:30 pm</small></div><div class="p">${DATA.summary?esc(DATA.summary.split('\n')[0]):left+' left over, done detected from your sources'}</div></button>
   <button type="button" class="row" onclick="go('jarvis')"><div class="t"><span>Jarvis</span><small>on request</small></div><div class="p">Voice rundown. Silent until you tap it.</div></button></div>
   <h2>Sources</h2><div class="list">
   <button type="button" class="row" onclick="go('mail')"><div class="t"><span>Mail</span><small>${mail.length}</small></div><div class="p">${esc(mail[0]?mail[0].subject:'Nothing new')}</div></button>
@@ -423,8 +431,10 @@ function today(){
   ${it.map(x=>`<li class="${x.k}"><div class="tm">${fmt(x.s)}</div><div><div class="ti">${esc(x.t)}${x.k==='clash'?'<span class="badge">overlap</span>':''}</div>${x.n?`<div class="no">${esc(x.n)}</div>`:''}</div></li>`).join('')}</ul></div>
   <button type="button" class="cta ghost" data-voice="Play my rundown" onclick="speak()">Play my rundown</button></div>`}
 function evening(){
-  const e=DATA.evening||[];
-  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">At 10:30 pm, done is detected rather than asked.</p><div class="list">
+  const e=DATA.evening||[],sum=DATA.summary||'';
+  return bar()+`<div class="wrap note"><h1>Evening Check</h1><p class="sub">At 10:30 pm, done is detected rather than asked.</p>
+  ${sum?`<h2>What last night's run did</h2><div class="list"><div class="entry">${esc(sum).replace(/\n/g,'<br>')}</div></div>`:''}
+  <h2>Today's list</h2><div class="list">
   ${e.length?e.map(x=>`<div class="chk ${x.done?'done':''}"><div class="c"></div><div><div class="tx">${esc(x.t)}</div><div class="src">${esc(x.src)}</div></div></div>`).join(''):'<p class="empty">Nothing on today’s list.</p>'}</div>
   <p class="sub" style="margin-top:14px">Leftovers roll into tomorrow’s list.</p></div>`}
 function mail(){
@@ -455,11 +465,29 @@ function logView(){
     oninput="logDraft=this.value" enterkeyhint="done">${esc(logDraft)}</textarea>
   <button type="button" class="cta" id="jsave" onclick="saveNote()" ${logBusy?'aria-busy="true" disabled':''}>${logBusy||'Add to today'}</button>
   <div aria-live="polite">${logMsg?`<p class="sub" style="margin-top:12px">${esc(logMsg)}</p>`:''}</div>
+  ${queued().length?`<p class="sub" style="color:var(--warn)">${queued().length} ${queued().length===1?'entry is':'entries are'} still on this phone, waiting for the server.</p>`:''}
   <h2>Today, ${n.length} ${n.length===1?'entry':'entries'}</h2>
   <div class="list">${n.length?n.map(x=>`<div class="entry"><div class="tm">${esc(x.when)}</div>${esc(x.text)}</div>`).join(''):'<p class="empty">Nothing yet today.</p>'}</div>
   <button type="button" class="cta ghost" onclick="processNow()">Send it to Claude now</button>
   <p class="sub">Otherwise it goes at 10:30 with everything else.</p>
   </div>`}
+/* Notes are written on the move, so a note must survive no signal. Anything that fails to
+   reach the server is kept here and flushed on the next successful connection. */
+const QKEY='wk_queue';
+const queued=()=>{try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return[]}};
+const setQueued=q=>{try{localStorage.setItem(QKEY,JSON.stringify(q))}catch(e){}};
+function queueNote(text){const q=queued();q.push({text:text,at:new Date().toISOString()});setQueued(q)}
+async function flushQueue(){
+  if(!live)return 0;
+  const q=queued();if(!q.length)return 0;
+  const left=[];let sent=0;
+  for(const n of q){
+    try{await api('/notes',{method:'POST',body:JSON.stringify({text:n.text})});sent++}
+    catch(e){left.push(n)}
+  }
+  setQueued(left);
+  return sent;
+}
 async function saveNote(){
   const t=(($('#jt')&&$('#jt').value)||logDraft).trim();
   if(!t){logMsg='Nothing to add yet.';render();return}
@@ -470,7 +498,11 @@ async function saveNote(){
       const n=await api('/notes',{method:'POST',body:JSON.stringify({text:t})}).then(r=>r.json());
       (DATA.notes=DATA.notes||[]).push({when:localTime(n.at),text:n.text});
       logDraft='';logMsg='Added.';
-    }catch(e){logMsg='Could not save it to the server: '+String(e.message||e)+' It is still in the box.';}
+    }catch(e){
+      queueNote(t);logDraft='';
+      logMsg='Saved on this phone. It goes up the next time the server answers.';
+      (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t});
+    }
   }else{
     (DATA.notes=DATA.notes||[]).push({when:localTime(new Date().toISOString()),text:t});
     logDraft='';logMsg='Added to the sample log. Connect a server to keep it.';
@@ -556,4 +588,9 @@ function render(){
 async function boot(){readDone=false;unlocked=false;qi=0;answers=[];tries=0;result=null;
   fishPrefetched=false;fishPromise=null;voiceUrl='';stopSpeech();await loadLive();render()}
 boot();
+/* Registered last and failure is ignored: the app works without it, and a broken worker
+   must never be the reason a morning does not load. */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+}
 </script></body></html>

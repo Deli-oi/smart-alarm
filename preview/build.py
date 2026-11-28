@@ -27,3 +27,36 @@ sample=dict(shared,audio="https://platform.r2.fish.audio/tasks/2026-11-27/23f0e0
 tpl=open("template.html").read()
 def out(path,d):open(path,"w").write(tpl.replace("/*DATA*/null",json.dumps(d)))
 out("../site/index.html",sample)
+
+# --- everything the Home Screen install needs, written alongside the page
+import os,shutil
+os.makedirs("../site/assets",exist_ok=True)
+for n in (180,192,512):
+    shutil.copyfile(f"assets/icon-{n}.png",f"../site/assets/icon-{n}.png")
+
+open("../site/manifest.webmanifest","w").write(json.dumps({
+ "name":"Wake-Up","short_name":"Wake-Up","start_url":".","scope":".",
+ "display":"standalone","orientation":"portrait",
+ "background_color":"#f6f0e3","theme_color":"#f6f0e3",
+ "description":"The morning issue, the recall gate, the day log.",
+ "icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"},
+          {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"}]
+},indent=1))
+
+# Network first, cache as a fallback. The other way round would serve a stale app for days,
+# and this page changes more often than it is opened.
+open("../site/sw.js","w").write("""const C='wake-up-v1';
+self.addEventListener('install',e=>{self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim())});
+self.addEventListener('fetch',e=>{
+  const u=new URL(e.request.url);
+  if(e.request.method!=='GET'||u.origin!==location.origin)return;   // never touch the API
+  e.respondWith(
+    fetch(e.request).then(r=>{
+      const copy=r.clone();
+      caches.open(C).then(c=>c.put(e.request,copy)).catch(()=>{});
+      return r;
+    }).catch(()=>caches.match(e.request).then(r=>r||caches.match('index.html')))
+  );
+});
+""")

@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     nango_drive_connection: str = ""  # connection id created when you log in through Nango
     token_enc_key: str = ""  # Fernet key for stored OAuth tokens; keep it out of the database host
     store: str = "mongo"  # "memory" runs without Atlas, for local dev and UI testing
+    # Off by default. Turning it on makes the recall gate real: the day plan and the task list
+    # stop answering until the day's quiz is passed or a skip is on the record. Left off until
+    # the morning flow has run enough times to be trusted, because a false lock costs a morning.
+    enforce_gate: bool = False
     cors_origins: str = "*"  # comma separated; bearer token still guards every data route
     ics_url: str = ""  # Google Calendar "secret address in iCal format"
     gmail_user: str = ""
