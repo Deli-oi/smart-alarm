@@ -87,3 +87,93 @@ Three ways it could go:
 2. Keep breakfast at 7:35 and read from 8:00.
 3. Leave it as it is, and accept that the recall gate is hard on purpose. Difficulty is the
    mechanism: the JMIR result is about a task you must finish, and an easy one would not work.
+
+
+---
+
+# Part two: the research the industry funds
+
+Looked at on 28 November 2026, on the question of whether the wake-up and wellness app
+category's own evidence supports building like they build.
+
+## The short answer
+
+Two of the category's signature features are weakly supported, and the thing that is strongly
+supported is one almost nobody sells.
+
+## Smart alarms: the premise is sound, the sensing is not
+
+Every app in the category sells the same promise. Sleep Cycle's own page says it works by
+"detecting when the best time to wake up is, by gently waking users up in their lightest sleep
+phase", using a 30-minute window and patented sound analysis of movement in bed.
+
+The underlying claim is reasonable: waking from deep sleep gives worse sleep inertia than waking
+from light sleep, which Part One already establishes. The problem is the measurement. A 2021
+validation study found consumer sleep trackers agreed with polysomnography on sleep stage only
+**50 to 86 percent of the time**, depending on stage and device, and phone microphone and
+accelerometer methods sit at the weak end of that range. An alarm firing on a coin-flip-to-decent
+guess about your sleep stage is not the precision instrument the marketing implies.
+
+Most of what is written about this is affiliate content rather than research. Several pages
+confidently cite a 2024 study as confirmation; the pages making that claim are commercial sleep
+product blogs, so take it as unverified.
+
+**What this means for us:** do not build sleep-stage detection. A fixed 7:00 alarm with a safety
+alarm behind it avoids the whole problem, and regularity (below) is worth more than stage-timing
+anyway.
+
+## Mindfulness apps: real but small, and half the trials have a conflict
+
+The cleanest thing in this literature is a systematic review that audited the funding rather than
+just the findings: O'Daffer et al., *Efficacy and Conflicts of Interest in RCTs Evaluating
+Headspace and Calm Apps* (JMIR Mental Health, 2022).
+
+- 14 RCTs of Headspace, 1 of Calm.
+- Headspace improved depression in 75% of the studies measuring it.
+- **50% (7 of 14) of the Headspace trials reported a conflict of interest involving the company.**
+  The most common was the company giving participants free premium access; 2 of 14 had a Headspace
+  employee involved.
+
+Where effects are measured carefully by independent teams, they are real and small. A multisite
+RCT in health care workers found Headspace reduced stress more than the comparator with **small
+effect sizes** that "could have population-level benefits". A 2026 RCT on sleep found longer sleep
+duration at one of three measurement points (p=.04) and no difference at the other two.
+
+**What this means for us:** be suspicious of any single impressive number from a company that
+sells the thing, including ours. The honest expectation for a personal morning app is a small
+effect that depends entirely on actually using it.
+
+## The thing almost nobody sells: regularity
+
+This is the strongest finding of the whole search, and it points away from what the products
+measure.
+
+Windred et al., *Sleep regularity is a stronger predictor of mortality risk than sleep duration*
+(Sleep, 2024) used objective actigraphy from **over 60,000 people** in the UK Biobank and found
+that day-to-day consistency of sleep and wake timing predicted all-cause mortality **better than
+how long people slept**, with risk reductions of 20 to 48 percent across the top four regularity
+quintiles. A companion commentary calls it out directly: regularity predicting mortality more
+strongly than duration "inverts the emphasis of most sleep advice and of most sleep tracking
+products."
+
+**What this means for us:** the number worth showing is not hours slept or sleep stages. It is
+whether he starts his morning at the same time every day.
+
+## And the risk that kills personal apps
+
+Eysenbach's "law of attrition" (JMIR, 2005) is the observation that in any eHealth trial a
+substantial proportion of users stop using the application. Attrition in digital health
+interventions runs **50 to 80 percent**.
+
+The most likely way this project fails is not a bug. It is that he stops opening it in March.
+That argues for keeping the daily cost low, making the gate skippable, and measuring consistency
+rather than performance.
+
+## What was changed because of part two
+
+- **A start-time consistency line on the home screen**, from a new `/regularity` endpoint: how
+  many mornings in the last fourteen, the usual time, and how many were within half an hour of
+  it. Written as plain counts, not a score, and not framed as a streak: a streak is a thing you
+  protect, and the habit is the point.
+- **Recall attempts are now timestamped**, which is what makes the above measurable at all.
+- **Sleep-stage detection stays unbuilt**, on purpose, with the reason written down.

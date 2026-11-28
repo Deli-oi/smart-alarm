@@ -16,6 +16,24 @@ on the single 10:30 run for now rather than spend that.
 So the flag is best read as "he wanted this sooner", not as a trigger. If an agent later adds a
 poller, update this entry and `docs/AUTOMATION.md` together, and say what the usage costs.
 
+## No sleep-stage detection, ever, on a phone
+
+*28 November 2026.* The category's signature feature is an alarm that fires when it thinks you
+are in light sleep. Consumer trackers agree with polysomnography on sleep stage only 50 to 86
+percent of the time, and phone microphone methods are the weak end of that. A fixed 7:00 alarm
+with the 7:10 safety behind it avoids the guesswork entirely. If this is ever revisited, it
+should be on real wearable data, not a microphone.
+
+## Consistency is the number on the home screen
+
+*28 November 2026.* Day-to-day regularity of sleep and wake timing predicts mortality better
+than sleep duration does, in 60,000 people with objective measurement. It is also the only thing
+of that calibre this app can actually see, through the minute he starts each morning.
+
+Shown as plain counts, never a score, and deliberately not a streak. Attrition in digital health
+runs 50 to 80 percent, so the real risk is that he stops opening it, and a streak that breaks is
+a reason to stop. `docs/RESEARCH.md` part two has the sources.
+
 ## Sixty seconds of breathing before the issue
 
 *28 November 2026.* Tapping Morning Issue goes to a wake step first: stand up, curtains, sixty

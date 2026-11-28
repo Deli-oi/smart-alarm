@@ -274,6 +274,7 @@ async function loadLive(){
     d.notes=N.map(x=>({when:localTime(x.at),text:x.text}));
   }catch(e){d.notes=[]}
   try{d.summary=(await api('/evening/summary').then(r=>r.json())).text||''}catch(e){d.summary=''}
+  try{d.reg=await api('/regularity').then(r=>r.json())}catch(e){d.reg=null}
   if(tasks.status==='fulfilled'){
     const T=await tasks.value.json();
     d.evening=T.map(t=>({t:t.title,done:t.status==='done',
@@ -391,6 +392,7 @@ function home(){
   return `<div class="bar"><span style="padding-left:8px">Folders</span>${trailing}</div><div class="wrap">
   <h1>Wake-Up</h1><p class="sub">${esc(DATA.date)}</p>
   ${liveErr?`<p class="sub" style="color:var(--warn)">${esc(liveErr)}</p>`:''}
+  ${regLine()}
   <h2>Pinned</h2><div class="list">
   <button type="button" class="row" onclick="go(readDone?'issue':'wake')"><div class="t"><span>Morning Issue</span><small>7:00 am</small></div><div class="p">${esc(DATA.readings.cite)}, three articles, fifteen minutes</div></button>
   <button type="button" class="row" onclick="go('recall')"><div class="t"><span>Recall</span><small>${readDone?'ready':'after reading'}</small></div><div class="p">${DATA.quiz.length} questions, two tries, 70% opens the day</div></button>
@@ -432,6 +434,18 @@ function startWake(){
     if(--wakeLeft<=0){stopWake();go('issue')}
   };
   tick();wakeTimer=setInterval(tick,1000);
+}
+/* Day-to-day consistency of wake timing predicts health outcomes better than how long you
+   slept, and better than anything else this app can see. So it is the one number on the home
+   screen, written as a plain count rather than a streak: a streak is a thing you protect, and
+   the point is the habit, not the number. docs/RESEARCH.md has the study. */
+function regLine(){
+  const r=DATA.reg;
+  if(!r||!r.mornings)return '';
+  if(r.mornings===1)return `<p class="sub">First morning on the record. Consistency is the thing worth building.</p>`;
+  const steady=r.on_time>=r.mornings-1&&r.spread_minutes<=45;
+  return `<p class="sub">${r.mornings} mornings in the last ${r.window_days}, usually around ${esc(r.usual)}.`
+    +(steady?' Steady.':` ${r.on_time} of them within half an hour of that.`)+`</p>`;
 }
 function issue(){
   const a=DATA.articles.map(x=>`<h3>${esc(x.title)}</h3><p class="kind">${esc(x.tag)}</p>${x.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('<hr class="rule">');

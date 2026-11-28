@@ -212,6 +212,16 @@ async def jarvis_speak(store: Store = Depends(get_store)) -> StreamingResponse:
     return StreamingResponse(fish_speech(text), media_type="audio/mpeg")
 
 
+@app.get("/regularity", dependencies=auth)
+async def regularity(store: Store = Depends(get_store)) -> dict:
+    """Consistency of his start time, which is the best-evidenced thing this app can measure.
+    See docs/RESEARCH.md."""
+    from .regularity import summarise, window
+
+    day = today()
+    return summarise(await store.recent_mornings(window(day)), day, get_settings().timezone)
+
+
 @app.get("/evening/summary", dependencies=auth)
 async def evening_summary(store: Store = Depends(get_store)) -> dict:
     """What the 10:30pm check found, until push notifications are set up."""

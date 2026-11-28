@@ -32,6 +32,7 @@ class Store(Protocol):
     async def record_skip(self, day: str, reason: str) -> None: ...
     async def list_skips(self, day: str) -> list[dict]: ...
     async def gate_open(self, day: str) -> bool: ...
+    async def recent_mornings(self, days: list[str]) -> list[dict]: ...
     async def add_note(self, day: str, note: Note) -> None: ...
     async def list_notes(self, day: str) -> list[Note]: ...
     async def set_processing(self, day: str, requested: bool) -> None: ...
@@ -53,7 +54,13 @@ class MongoStore:
         return await self.db.quiz_attempts.count_documents({"date": day})
 
     async def record_attempt(self, day: str, score: float, passed: bool) -> None:
-        await self.db.quiz_attempts.insert_one({"date": day, "score": score, "passed": passed})
+        await self.db.quiz_attempts.insert_one(
+            {"date": day, "score": score, "passed": passed, "at": _now()}
+        )
+
+    async def recent_mornings(self, days: list[str]) -> list[dict]:
+        cur = self.db.quiz_attempts.find({"date": {"$in": days}}, {"_id": 0}).sort("at", 1)
+        return [d async for d in cur]
 
     async def record_skip(self, day: str, reason: str) -> None:
         await self.db.skips.insert_one({"date": day, "reason": reason, "at": _now()})
@@ -140,7 +147,10 @@ class InMemoryStore:
         return sum(1 for a in self.attempts if a["date"] == day)
 
     async def record_attempt(self, day: str, score: float, passed: bool) -> None:
-        self.attempts.append({"date": day, "score": score, "passed": passed})
+        self.attempts.append({"date": day, "score": score, "passed": passed, "at": _now()})
+
+    async def recent_mornings(self, days: list[str]) -> list[dict]:
+        return sorted([a for a in self.attempts if a["date"] in days], key=lambda a: a.get("at", ""))
 
     async def record_skip(self, day: str, reason: str) -> None:
         self.skips.append({"date": day, "reason": reason, "at": _now()})
