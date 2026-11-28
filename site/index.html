@@ -143,8 +143,10 @@ let view='home',unlocked=false,readDone=false,qi=0,answers=[],tries=0,sel=null,t
 
 const CFG=()=>{try{return JSON.parse(localStorage.getItem('wk')||'{}')}catch(e){return{}}};
 let draft=null;
-/* A build can pre-fill the server address (never the token, which the person pastes once). */
-const getDraft=()=>{if(!draft){const c=CFG();draft={url:c.url||(DATA.preset&&DATA.preset.url)||'',token:c.token||'',show:false}}return draft};
+/* The address can arrive three ways: already saved, baked into the build, or in the page's
+   own #s= fragment, which is never sent to any server and keeps it off a public page. */
+function hashUrl(){try{const m=/[#&]s=([^&]+)/.exec(location.hash||'');return m?decodeURIComponent(m[1]):''}catch(e){return ''}}
+const getDraft=()=>{if(!draft){const c=CFG();draft={url:c.url||hashUrl()||(DATA.preset&&DATA.preset.url)||'',token:c.token||'',show:false}}return draft};
 
 /* A server address typed on a phone arrives without a scheme and often with a trailing slash.
    Anything but a local address gets https, so a typed hostname is never sent in the clear. */
@@ -192,7 +194,8 @@ async function loadLive(){
   }catch(e){
     checks.push({k:'bad',n:'Cannot reach the server',
       d:e.name==='AbortError'?'No answer within 8 seconds. Check the address.'
-        :'Check the address, and that it starts with https.'});
+        :'Nothing left this browser. Open the address in a tab: if it answers, this page is '
+         +'blocking outside requests, so open the GitHub Pages copy of the app instead.'});
   }
   const got=await Promise.allSettled([api('/issue/today'),api('/quiz/today'),api('/day'),api('/tasks/today')]);
   const [iss,quiz,day,tasks]=got;
